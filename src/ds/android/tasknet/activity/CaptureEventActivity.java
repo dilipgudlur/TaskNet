@@ -29,13 +29,10 @@ public class CaptureEventActivity extends Activity {
         Button distributeButton = (Button) findViewById(R.id.distributeButton);
         coughButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
-				Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-				i.setType("audio/");
-				startActivityForResult(Intent.createChooser(i, "Select audio file"), GET_AUDIO);
-
 				
-							
-			}});
+				Intent i = new Intent("org.openintents.action.PICK_FILE",Uri.parse("directory:///home/dilip/"));
+				startActivityForResult(i, GET_AUDIO);
+		}});
         distributeButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				Intent i = new Intent(CaptureEventActivity.this, DistributeActivity.class);
@@ -48,7 +45,7 @@ public class CaptureEventActivity extends Activity {
 	    System.out.println("here");
 	    if (requestCode == GET_AUDIO) {
 	       if (resultCode == RESULT_OK) {			
-				Uri audioFile = data.getData();
+				
 				showDialog(SUCCESS_DIALOG);
 			}
 			else
