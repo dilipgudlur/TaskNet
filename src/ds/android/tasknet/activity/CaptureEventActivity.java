@@ -1,5 +1,8 @@
 package ds.android.tasknet.activity;
 
+import java.io.InputStream;
+import java.io.Reader;
+
 import com.example.android.tasknet.R;
 import android.app.Activity;
 import android.content.Intent;
@@ -7,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -29,9 +33,12 @@ public class CaptureEventActivity extends Activity {
         Button distributeButton = (Button) findViewById(R.id.distributeButton);
         coughButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
+				InputStream cough = getResources().openRawResource(R.raw.aud);
+				MediaPlayer mp = MediaPlayer.create(getBaseContext(), R.raw.aud);
+			    mp.start();
 				
-				Intent i = new Intent("org.openintents.action.PICK_FILE",Uri.parse("directory:///home/dilip/"));
-				startActivityForResult(i, GET_AUDIO);
+				//Intent i = new Intent();
+				//startActivityForResult(i, GET_AUDIO);
 		}});
         distributeButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
