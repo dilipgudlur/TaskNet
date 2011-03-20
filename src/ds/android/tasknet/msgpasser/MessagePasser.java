@@ -88,7 +88,7 @@ public class MessagePasser extends Thread {
             prop.load(new FileInputStream(configuration_filename));
             host_ip = InetAddress.getByName(prop.getProperty("node." + local_name + ".ip"));
             host_port = Integer.parseInt(prop.getProperty("node." + local_name + ".port"));
-            udpServerSocket = new DatagramSocket(host_port);
+            udpServerSocket = new DatagramSocket(host_port, host_ip);
 
             /* Input and Output Buffers
              * Use of delayed input and output buffers improve efficiency

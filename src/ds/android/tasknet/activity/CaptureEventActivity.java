@@ -4,6 +4,11 @@ import java.io.InputStream;
 import java.io.Reader;
 
 import com.example.android.tasknet.R;
+
+import ds.android.tasknet.config.Preferences;
+import ds.android.tasknet.exceptions.InvalidMessageException;
+import ds.android.tasknet.msgpasser.Message;
+import ds.android.tasknet.msgpasser.MessagePasser;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -34,8 +39,18 @@ public class CaptureEventActivity extends Activity {
         coughButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
 				InputStream cough = getResources().openRawResource(R.raw.aud);
-				MediaPlayer mp = MediaPlayer.create(getBaseContext(), R.raw.aud);
-			    mp.start();
+				Preferences.setHostDetails(Preferences.conf_file, "alice");
+				MessagePasser messageParser = new MessagePasser(Preferences.conf_file, "alice");
+				Message message = new Message("bob", "kind10", "id10", "hello world");
+				try {
+					messageParser.send(message);
+				} catch (InvalidMessageException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+//				MediaPlayer mp = MediaPlayer.create(getBaseContext(), R.raw.aud);
+//			    mp.start();
 				
 				//Intent i = new Intent();
 				//startActivityForResult(i, GET_AUDIO);

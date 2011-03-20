@@ -21,9 +21,9 @@ import java.util.logging.Logger;
  */
 public class Preferences {
 
-    public static final String conf_file = "InfrastructureLab" + System.getProperty("file.separator") + "src"
-            + System.getProperty("file.separator") + "com" + System.getProperty("file.separator")
-            + "conf" + System.getProperty("file.separator") + "ppfile.ini";
+	public static final String seperator = System.getProperty("file.separator");
+    public static final String conf_file = seperator + "mnt" + seperator + "sdcard" 
+    										+ seperator + "ppfile.ini";
     public static final int num_kind = 6;
     public static final int num_msgid = 6;
     public static final int delayedEnoughThreshold = 1000;
