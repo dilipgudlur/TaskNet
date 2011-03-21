@@ -15,6 +15,8 @@ import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
@@ -88,7 +90,12 @@ public class MessagePasser extends Thread {
             prop.load(new FileInputStream(configuration_filename));
             host_ip = InetAddress.getByName(prop.getProperty("node." + local_name + ".ip"));
             host_port = Integer.parseInt(prop.getProperty("node." + local_name + ".port"));
+            //udpServerSocket = new ServerSocket();
+            //udpServerSocket.setReuseAddress(true);
+            //udpServerSocket.bind(new InetSocketAddress(host_ip, host_port));
             udpServerSocket = new DatagramSocket(host_port, host_ip);
+            //udpServerSocket.
+            //setsockopt(SO_REUSEADDR
 
             /* Input and Output Buffers
              * Use of delayed input and output buffers improve efficiency
@@ -369,7 +376,7 @@ public class MessagePasser extends Thread {
             ObjectInputStream ois = null;
             try {
                 udpPacketReceived = new DatagramPacket(receiveData, receiveData.length, host_ip, host_port);
-                udpServerSocket.receive(udpPacketReceived);
+                //udpServerSocket.receive(udpPacketReceived);
                 ByteArrayInputStream bis = new ByteArrayInputStream(udpPacketReceived.getData());
                 ois = new ObjectInputStream(bis);
                 final Message msg = (Message) (ois.readObject());

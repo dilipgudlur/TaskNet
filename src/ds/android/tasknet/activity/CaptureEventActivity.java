@@ -40,6 +40,7 @@ public class CaptureEventActivity extends Activity {
 			public void onClick(View v) {
 				InputStream cough = getResources().openRawResource(R.raw.aud);
 				Preferences.setHostDetails(Preferences.conf_file, "alice");
+				
 				MessagePasser messageParser = new MessagePasser(Preferences.conf_file, "alice");
 				Message message = new Message("bob", "kind10", "id10", "hello world");
 				try {
