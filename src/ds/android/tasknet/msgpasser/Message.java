@@ -18,6 +18,8 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
+	public enum NormalMsgType { NORMAL, PROFILE_XCHG, TASK_ADV };
+	
     /**
 	 * 
 	 */
@@ -28,6 +30,7 @@ public class Message implements Serializable {
     protected String id;
     protected String logMessage;
     protected Boolean log;
+    protected NormalMsgType normalMsgType;
 
     public Message(String dest, String kind, String id, Object data) {
         this.data = data.toString();
@@ -36,8 +39,17 @@ public class Message implements Serializable {
         this.id = id;
         log = false;
         logMessage = "";
+        normalMsgType = NormalMsgType.NORMAL;
     }
 
+    public void setNormalMsgType(NormalMsgType type){
+        normalMsgType = type;
+    }
+
+    public NormalMsgType getNormalMsgType(){
+        return normalMsgType;
+    }
+    
     public String getDest() {
         return destination;
     }

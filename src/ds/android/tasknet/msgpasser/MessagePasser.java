@@ -90,12 +90,10 @@ public class MessagePasser extends Thread {
             prop.load(new FileInputStream(configuration_filename));
             host_ip = InetAddress.getByName(prop.getProperty("node." + local_name + ".ip"));
             host_port = Integer.parseInt(prop.getProperty("node." + local_name + ".port"));
-            //udpServerSocket = new ServerSocket();
-            //udpServerSocket.setReuseAddress(true);
-            //udpServerSocket.bind(new InetSocketAddress(host_ip, host_port));
-            udpServerSocket = new DatagramSocket(host_port, host_ip);
-            //udpServerSocket.
-            //setsockopt(SO_REUSEADDR
+            udpServerSocket = new DatagramSocket(null);
+            udpServerSocket.setReuseAddress(true);
+            udpServerSocket.bind(new InetSocketAddress(host_ip, host_port));
+
 
             /* Input and Output Buffers
              * Use of delayed input and output buffers improve efficiency
