@@ -76,7 +76,7 @@ public class MessagePasser extends Thread {
      */
     public MessagePasser(String configuration_filename, String local_name) {
         prop = new Properties();
-        receiveData = new byte[1024];
+        receiveData = new byte[10000];
         conf_file = configuration_filename;
         host_name = local_name;
 
@@ -370,14 +370,16 @@ public class MessagePasser extends Thread {
     @Override
     public void run() {
         while (true) {
-            receiveData = new byte[1024];
+            receiveData = new byte[10000];
             ObjectInputStream ois = null;
             try {
-                udpPacketReceived = new DatagramPacket(receiveData, receiveData.length, host_ip, host_port);
-                //udpServerSocket.receive(udpPacketReceived);
-                ByteArrayInputStream bis = new ByteArrayInputStream(udpPacketReceived.getData());
+            	ByteArrayInputStream bis = new ByteArrayInputStream(receiveData);
+                udpPacketReceived = new DatagramPacket(receiveData, receiveData.length);
+                udpServerSocket.receive(udpPacketReceived);               
                 ois = new ObjectInputStream(bis);
                 final Message msg = (Message) (ois.readObject());
+                udpPacketReceived.setLength(receiveData.length);
+                bis.reset();
                 if (msg instanceof MulticastMessage) {
                     deliverMessage((MulticastMessage) msg);
                 } else {

@@ -41,10 +41,16 @@ public class CaptureEventActivity extends Activity {
 				InputStream cough = getResources().openRawResource(R.raw.aud);
 				Preferences.setHostDetails(Preferences.conf_file, "alice");
 				
-				MessagePasser messageParser = new MessagePasser(Preferences.conf_file, "alice");
+				MessagePasser messageParserAlice = new MessagePasser(Preferences.conf_file, "alice");
+				
+				MessagePasser messageParserBob = new MessagePasser(Preferences.conf_file, "bob");
+				messageParserBob.start();
+				
 				Message message = new Message("bob", "kind10", "id10", "hello world");
+				
+				
 				try {
-					messageParser.send(message);
+					messageParserAlice.send(message);
 				} catch (InvalidMessageException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
