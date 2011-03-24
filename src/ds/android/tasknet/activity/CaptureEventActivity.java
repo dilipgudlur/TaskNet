@@ -1,8 +1,6 @@
 package ds.android.tasknet.activity;
 
 import java.io.InputStream;
-import java.io.Reader;
-
 import com.example.android.tasknet.R;
 
 import ds.android.tasknet.config.Preferences;
@@ -15,8 +13,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;

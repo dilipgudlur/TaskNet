@@ -22,15 +22,15 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public enum MessageType {
-        NORMAL, UPDATE_STATE, RUT, ALIVE, ACK, GET_MUTEX, RELEASE_MUTEX, MUTEX_ACK
+    public enum MessageType {
+        NORMAL, UPDATE_STATE, RUT, ALIVE, ACK, GET_MUTEX, RELEASE_MUTEX, MUTEX_ACK, TASK_ADV
     };
     boolean[] msgReceived;
     MessageType msgType;
     String source;
 //    Vector<Integer> causalBarrier;
 
-    public MulticastMessage(String dest, String kind, String id, Object data, ClockService c,
+    public MulticastMessage(String dest, String kind, String id, Serializable data, ClockService c,
             boolean newTimeStamp, MessageType mType, String src) {
         super(dest, kind, id, data, c, newTimeStamp);
         msgReceived = new boolean[Preferences.nodes.size()];
@@ -65,7 +65,7 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
         return true;
     }
 
-    String getSource() {
+    public String getSource() {
         return source;
     }
 

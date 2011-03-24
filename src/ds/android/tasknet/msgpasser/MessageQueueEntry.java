@@ -20,17 +20,17 @@ public class MessageQueueEntry implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	boolean[] msgReceived;
+    boolean[] msgReceived;
     Vector<Integer> timeStamp;
     MulticastMessage message;
 
-    MessageQueueEntry(MulticastMessage msg, Vector vc, boolean[] msgRcvd){
+    MessageQueueEntry(MulticastMessage msg, Vector<Integer> vc, boolean[] msgRcvd){
         message = msg;
         timeStamp = vc;
         msgReceived = msgRcvd;
     }
 
-    Vector getTimeStamp() {
+    Vector<Integer> getTimeStamp() {
         return timeStamp;
     }
 

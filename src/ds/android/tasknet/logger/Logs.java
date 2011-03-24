@@ -87,7 +87,8 @@ public class Logs {
         return result;
     }
     
-    int compareVector(LogMessage firstMsg, LogMessage secondMsg){
+    @SuppressWarnings("unchecked")
+	int compareVector(LogMessage firstMsg, LogMessage secondMsg){
         int result = 0;
         Vector<Integer> vFirst = (Vector<Integer>) ((TimeStampedMessage) firstMsg.getMessage()).getClockService().getTime();
         Vector<Integer> vSecond = (Vector<Integer>) ((TimeStampedMessage) secondMsg.getMessage()).getClockService().getTime();

@@ -18,13 +18,13 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
-	public enum NormalMsgType { NORMAL, PROFILE_XCHG, TASK_ADV };
+	public enum NormalMsgType { NORMAL, PROFILE_XCHG, TASK_ADV, PROFILE_UPDATE };
 	
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	protected String data;
+	protected Serializable data;
     protected String destination;
     protected String kind;
     protected String id;
@@ -32,8 +32,8 @@ public class Message implements Serializable {
     protected Boolean log;
     protected NormalMsgType normalMsgType;
 
-    public Message(String dest, String kind, String id, Object data) {
-        this.data = data.toString();
+    public Message(String dest, String kind, String id, Serializable data) {
+        this.data = data;
         this.kind = kind;
         this.destination = dest;
         this.id = id;
@@ -49,7 +49,7 @@ public class Message implements Serializable {
     public NormalMsgType getNormalMsgType(){
         return normalMsgType;
     }
-    
+
     public String getDest() {
         return destination;
     }
@@ -62,7 +62,7 @@ public class Message implements Serializable {
         return id;
     }
 
-    public Object getData() {
+    public Serializable getData() {
         return data;
     }
 
