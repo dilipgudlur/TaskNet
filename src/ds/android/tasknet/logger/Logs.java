@@ -87,6 +87,7 @@ public class Logs {
         return result;
     }
     
+    @SuppressWarnings("unchecked")
     int compareVector(LogMessage firstMsg, LogMessage secondMsg){
         int result = 0;
         Vector<Integer> vFirst = (Vector<Integer>) ((TimeStampedMessage) firstMsg.getMessage()).getClockService().getTime();

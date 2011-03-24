@@ -24,7 +24,8 @@ public class TimeStampedMessage extends Message implements Serializable {
 	ClockService clock;
     String eventID;
 
-    public TimeStampedMessage(String dest, String kind, String id, Object data, ClockService c, boolean newTimeStamp) {
+    public TimeStampedMessage(String dest, String kind, String id, 
+    		Serializable  data, ClockService c, boolean newTimeStamp) {
         super(dest, kind, id, data);
         if (c instanceof LogicalClock && newTimeStamp) {
             ((LogicalClock) c).incrementTime();

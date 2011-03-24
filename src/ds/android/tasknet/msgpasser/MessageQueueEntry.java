@@ -24,13 +24,13 @@ public class MessageQueueEntry implements Serializable{
     Vector<Integer> timeStamp;
     MulticastMessage message;
 
-    MessageQueueEntry(MulticastMessage msg, Vector vc, boolean[] msgRcvd){
+    MessageQueueEntry(MulticastMessage msg, Vector<Integer> vc, boolean[] msgRcvd){
         message = msg;
         timeStamp = vc;
         msgReceived = msgRcvd;
     }
 
-    Vector getTimeStamp() {
+    Vector<Integer> getTimeStamp() {
         return timeStamp;
     }
 

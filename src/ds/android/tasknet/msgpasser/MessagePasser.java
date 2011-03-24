@@ -11,16 +11,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +31,6 @@ import java.util.logging.Logger;
 public class MessagePasser extends Thread {
 
     enum Process_State {
-
         RELEASED, WANTED, HELD
     };
     Properties prop;
@@ -61,7 +57,8 @@ public class MessagePasser extends Thread {
      * @param local_name
      * @param clockType - Enum ClockType
      */
-    public MessagePasser(String configuration_filename, String local_name, ClockType clockType, Integer... numberOfNodes) {
+    public MessagePasser(String configuration_filename, String local_name, 
+    		ClockType clockType, Integer... numberOfNodes) {
         this(configuration_filename, local_name);
         clock = ClockFactory.initializeClock(clockType, numberOfNodes[0]);
     }
@@ -76,7 +73,7 @@ public class MessagePasser extends Thread {
      */
     public MessagePasser(String configuration_filename, String local_name) {
         prop = new Properties();
-        receiveData = new byte[10000];
+        receiveData = new byte[Preferences.SIZE_OF_BUFFER];
         conf_file = configuration_filename;
         host_name = local_name;
 
@@ -225,15 +222,18 @@ public class MessagePasser extends Thread {
             prop = new Properties();
             prop.load(new FileInputStream(conf_file));
             udpClientSocket = new DatagramSocket();
+            udpClientSocket.setReceiveBufferSize(5000);
+            udpClientSocket.setSendBufferSize(5000);            
             if (message instanceof MulticastMessage) {
                 if (((MulticastMessage) message).getMessageType() == MulticastMessage.MessageType.GET_MUTEX) {
                     synchronized (process_state) {
                         synchronized (arrMutexAckReceived) {
 //                            process_state = Process_State.WANTED;
-                            arrMutexAckReceived[Preferences.nodes.get(host_name)] = true;
+                            arrMutexAckReceived[(Preferences.nodes.get(host_name)).getIndex()] = true;
                         }
                     }
-                } else if (((MulticastMessage) message).getMessageType() == MulticastMessage.MessageType.RELEASE_MUTEX) {
+                } else if (((MulticastMessage) message).getMessageType() 
+                		== MulticastMessage.MessageType.RELEASE_MUTEX) {
                     synchronized (process_state) {
                         synchronized (arrMutexAckReceived) {
                             synchronized (mutexQueue) {
@@ -242,7 +242,8 @@ public class MessagePasser extends Thread {
                                     arrMutexAckReceived[i] = false;
                                 }
                                 while (!mutexQueue.isEmpty()) {
-                                    MulticastMessage mutexAckMsg = new MulticastMessage(mutexQueue.remove(0), MulticastMessage.MessageType.MUTEX_ACK);
+                                    MulticastMessage mutexAckMsg = new MulticastMessage(mutexQueue.remove(0), 
+                                    		MulticastMessage.MessageType.MUTEX_ACK);
                                     mutexAckMsg.setDest(mutexAckMsg.getSource());
                                     mutexAckMsg.setSource(host_name);
                                     sendMsgThroSocket(mutexAckMsg);
@@ -258,23 +259,31 @@ public class MessagePasser extends Thread {
                     if (((MulticastMessage) message).getMessageType() == MulticastMessage.MessageType.MUTEX_ACK) {
                         System.out.println("Sending MUTEX_ACK to: " + message.getDest());
                     }
-                    udpsendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")), Integer.parseInt(prop.getProperty("node." + message.getDest() + ".port")));
+                    udpsendPacket = new DatagramPacket(sendData, sendData.length, 
+                    		InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")), 
+                    		Integer.parseInt(prop.getProperty("node." + message.getDest() + ".port")));
+                    System.out.println(InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")));
                     udpClientSocket.send(udpsendPacket);
                 } else {
                     Object[] node_names = Preferences.node_addresses.keySet().toArray();
                     for (int i = 0; i < node_names.length; i++) {
                         if (!host_name.equalsIgnoreCase((String) node_names[i])
                                 && !Preferences.crashNode.equalsIgnoreCase((String) node_names[i])) {
-                            if (((MulticastMessage) message).getMessageType() == MulticastMessage.MessageType.GET_MUTEX) {
+                            if (((MulticastMessage) message).getMessageType() == 
+                            	MulticastMessage.MessageType.GET_MUTEX) {
                                 System.out.println("Sending GET_MUTEX to: " + message.getDest());
                             }
-                            udpsendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(prop.getProperty("node." + (String) node_names[i] + ".ip")), Integer.parseInt(prop.getProperty("node." + (String) node_names[i] + ".port")));
+                            udpsendPacket = new DatagramPacket(sendData, sendData.length, 
+                            		InetAddress.getByName(prop.getProperty("node." + (String) node_names[i] + ".ip"))
+                            		, Integer.parseInt(prop.getProperty("node." + (String) node_names[i] + ".port")));
                             udpClientSocket.send(udpsendPacket);
                         }
                     }
                 }
             } else {
-                udpsendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")), Integer.parseInt(prop.getProperty("node." + message.getDest() + ".port")));
+                udpsendPacket = new DatagramPacket(sendData, sendData.length, 
+                		InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")), 
+                		Integer.parseInt(prop.getProperty("node." + message.getDest() + ".port")));
                 udpClientSocket.send(udpsendPacket);
             }
         } catch (IOException ex) {
@@ -288,12 +297,12 @@ public class MessagePasser extends Thread {
         }
     }
     
-    public void setProcessState(String state){
-    	if(state.equalsIgnoreCase("Wanted")){
-    		process_state = Process_State.WANTED;
-    	}else if(state.equalsIgnoreCase("Released")){
-    		process_state = Process_State.RELEASED;
-    	}
+    public void setProcessState(String state) {
+        if (state.equalsIgnoreCase("Wanted")) {
+            process_state = Process_State.WANTED;
+        } else if (state.equalsIgnoreCase("Released")) {
+            process_state = Process_State.RELEASED;
+        }
     }
 
     /**
@@ -304,8 +313,7 @@ public class MessagePasser extends Thread {
      * Any other combination of ID and Kind are just enqueued into outBuffer
      * Also ID of the message takes precedence over Kind
      */
-    public void send(Message msg) throws InvalidMessageException {
-    	
+    public void send(Message msg) throws InvalidMessageException {    	
         String msgType = prop.getProperty("is." + msg.getId());
         updateTime(msg, "send");
         if (msgType == null) {
@@ -352,7 +360,7 @@ public class MessagePasser extends Thread {
                 }
             }
         } else {
-            System.out.println("Sent message added to queue");
+            //System.out.println("Sent message added to queue");
             synchronized (outQueue) {
                 outQueue.add(msg);
                 if (Preferences.logEvent && !msg.getDest().equalsIgnoreCase(Preferences.logger_name)) {
@@ -370,7 +378,7 @@ public class MessagePasser extends Thread {
     @Override
     public void run() {
         while (true) {
-            receiveData = new byte[10000];
+            receiveData = new byte[Preferences.SIZE_OF_BUFFER];
             ObjectInputStream ois = null;
             try {
             	ByteArrayInputStream bis = new ByteArrayInputStream(receiveData);
@@ -381,8 +389,10 @@ public class MessagePasser extends Thread {
                 udpPacketReceived.setLength(receiveData.length);
                 bis.reset();
                 if (msg instanceof MulticastMessage) {
+                	System.out.println("Getting multicast msg");
                     deliverMessage((MulticastMessage) msg);
                 } else {
+                	System.out.println("Getting normal message");
                     processReceivedMessage(msg);
                 }
             } catch (InvalidMessageException ex) {
@@ -410,6 +420,7 @@ public class MessagePasser extends Thread {
      * Also ID of the message takes precedence over Kind
      */
     void processReceivedMessage(Message msg) throws InvalidMessageException {
+    	System.out.println("Getting message");
         if (!msg.getDest().equalsIgnoreCase("logger")) {
             updateTime(msg, "receive");
         }
@@ -542,7 +553,7 @@ public class MessagePasser extends Thread {
                         + nextId);
                 ((LogicalClock) clock).updateTime(((TimeStampedMessage) msg).getClockService());
             }
-            clock.incrementTime(Preferences.nodes.get(host_name));
+            clock.incrementTime((Preferences.nodes.get(host_name)).getIndex());
             ((TimeStampedMessage) msg).setClock(clock);
 
         }
@@ -551,18 +562,31 @@ public class MessagePasser extends Thread {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void deliverMessage(MulticastMessage msg) {
-        msg.setMsgReceived(Preferences.nodes.get(host_name));
+    	msg.setMsgReceived((Preferences.nodes.get(host_name)).getIndex());
         /* If the message is a normal msg from application layer
          * 1. Add the hold back queue
          * 2. Send an acknowledgement to all the processes in the group
          *      Acknowledgement kind and id are "multicast"
          */
         switch (msg.getMessageType()) {
+	        case TASK_ADV:
+	            boolean[] received = new boolean[Preferences.nodes.size()];
+	            for (int i = 0; i < received.length; i++) {
+	                received[i] = true;
+	            }
+	            msg.setMsgReceivedArray(received);
+	            synchronized (holdBackQueue) {
+	                holdBackQueue.add(new MessageQueueEntry(msg,
+	                        (Vector<Integer>) msg.getClockService().getTime(),
+	                        msg.getMsgReceivedArray()));
+	            }
+	            break;        
             case NORMAL:
                 synchronized (holdBackQueue) {
                     holdBackQueue.add(new MessageQueueEntry(msg,
-                            (Vector) msg.getClockService().getTime(),
+                    		(Vector<Integer>) msg.getClockService().getTime(),
                             msg.getMsgReceivedArray()));
                 }
                 try {
@@ -601,34 +625,12 @@ public class MessagePasser extends Thread {
                 break;
 
             case RUT:
-                StringTokenizer tokens = new StringTokenizer(msg.getData().toString(), "~");
-                String dest = tokens.nextToken().trim();
-                String kind = tokens.nextToken().trim();
-                String id = tokens.nextToken().trim();
-                String vClockStr = tokens.nextToken();
-                vClockStr = vClockStr.substring(1, vClockStr.length() - 1);
-                StringTokenizer vcToken = new StringTokenizer(vClockStr, ",");
-                Vector<Integer> vClock = new Vector<Integer>(Preferences.nodes.size());
-                int vSize = vcToken.countTokens();
-                for (int i = 0; i < vSize; i++) {
-                    vClock.add(i, new Integer(vcToken.nextToken().trim()));
-                }
-                String data = tokens.nextToken();
-                String source = tokens.nextToken();
-                String byteArray = tokens.nextToken();
-                StringTokenizer byteArrayTokens = new StringTokenizer(byteArray, ",");
-                boolean[] msgByteArray = new boolean[Preferences.nodes.size()];
-                int arraySize = byteArrayTokens.countTokens();
-                for (int i = 0; i < arraySize; i++) {
-                    msgByteArray[i] = Boolean.valueOf(byteArrayTokens.nextToken());
-                }
-                msgByteArray[Preferences.nodes.get(host_name)] = true;
-                MulticastMessage receivedMsg = new MulticastMessage(dest, kind, id, data, msg.getClockService(), false, MulticastMessage.MessageType.UPDATE_STATE, source);
-                ((VectorClock) receivedMsg.getClockService()).setTime(vClock);
-                receivedMsg.setMsgReceivedArray(msgByteArray);
-                updateHoldBackQueue(receivedMsg);
+                msg.msgReceived[(Preferences.nodes.get(host_name)).getIndex()] = true;
+                msg.msgType = MulticastMessage.MessageType.UPDATE_STATE;
+                updateHoldBackQueue((MulticastMessage) msg);
+                processHoldBackQueue();
                 break;
-
+                
             case GET_MUTEX:
                 System.out.println("Received GET_MUTEX from " + msg.getSource());
                 synchronized (process_state) {
@@ -647,100 +649,102 @@ public class MessagePasser extends Thread {
                                 + " Host clock: " + (Integer) (clock.getTime())
                                 + "\nMessage index: " + Preferences.nodes.get(msg.getSource())
                                 + " Host index: " + Preferences.nodes.get(host_name));
-                        
-                        if(msg.getId().equalsIgnoreCase("id2")){
-                        if (((Integer) (msg.clock.getTime()) > (Integer) (clock.getTime()))) {
-                        	System.out.println("Msg greater clock");
+
+                        if (msg.getId().equalsIgnoreCase("id2")) {
+                            if (((Integer) (msg.clock.getTime()) > (Integer) (clock.getTime()))) {
+                                System.out.println("Msg greater clock");
 //                                || ((Integer) (msg.clock.getTime()) == (Integer) (clock.getTime())
 //                                && Preferences.nodes.get(host_name) > Preferences.nodes.get(msg.getSource()))) {
-                            System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
-                            synchronized (mutexQueue) {
-                                mutexQueue.add(msg);
-                            }
-                        } if(((Integer) (msg.clock.getTime())).equals((Integer) (clock.getTime()))){
-                        	System.out.println("Equal");
-                        	if(Preferences.nodes.get(host_name) < Preferences.nodes.get(msg.getSource())){
-                        		 System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
-                                 synchronized (mutexQueue) {
-                                     mutexQueue.add(msg);
-                                 }
-                        	} else {
-                        		 System.out.println(host_name + " " + msg.source);
-                                 MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
-                                 mutexAckMsg.setDest(msg.getSource());
-                                 mutexAckMsg.setSource(host_name);
-                                 sendMsgThroSocket(mutexAckMsg);	
-                        	}
-                        }
-                        	if(((Integer) (msg.clock.getTime()) < (Integer) (clock.getTime()))){
-                        		System.out.println("Msg smaller clock");
-                            System.out.println(host_name + " " + msg.source);
-                            MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
-                            mutexAckMsg.setDest(msg.getSource());
-                            mutexAckMsg.setSource(host_name);
-                            sendMsgThroSocket(mutexAckMsg);
-                        }
-                    } else {
-                    	int hostClock = (Integer) (clock.getTime());
-                    	if(!delayedOutQueue.isEmpty()){
-                    		if (((Integer) (msg.clock.getTime()) > (Integer) (clock.getTime()))) {
-                            	System.out.println("Msg greater clock");
-//                                    || ((Integer) (msg.clock.getTime()) == (Integer) (clock.getTime())
-//                                    && Preferences.nodes.get(host_name) > Preferences.nodes.get(msg.getSource()))) {
                                 System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
                                 synchronized (mutexQueue) {
                                     mutexQueue.add(msg);
                                 }
-                            } if(((Integer) (msg.clock.getTime())).equals((Integer) (clock.getTime()))){
-                            	System.out.println("Equal");
-                            	if(Preferences.nodes.get(host_name) < Preferences.nodes.get(msg.getSource())){
-                            		 System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
-                                     synchronized (mutexQueue) {
-                                         mutexQueue.add(msg);
-                                     }
-                            	} else {
-                            		 System.out.println(host_name + " " + msg.source);
-                                     MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
-                                     mutexAckMsg.setDest(msg.getSource());
-                                     mutexAckMsg.setSource(host_name);
-                                     sendMsgThroSocket(mutexAckMsg);	
-                            	}
                             }
-                            	if(((Integer) (msg.clock.getTime()) < (Integer) (clock.getTime()))){
-                            		System.out.println("Msg smaller clock");
+                            if (((Integer) (msg.clock.getTime())).equals((Integer) (clock.getTime()))) {
+                                System.out.println("Equal");
+                                if (Preferences.nodes.get(host_name).getIndex() < Preferences.nodes.get(msg.getSource()).getIndex()) {
+                                    System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
+                                    synchronized (mutexQueue) {
+                                        mutexQueue.add(msg);
+                                    }
+                                } else {
+                                    System.out.println(host_name + " " + msg.source);
+                                    MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
+                                    mutexAckMsg.setDest(msg.getSource());
+                                    mutexAckMsg.setSource(host_name);
+                                    sendMsgThroSocket(mutexAckMsg);
+                                }
+                            }
+                            if (((Integer) (msg.clock.getTime()) < (Integer) (clock.getTime()))) {
+                                System.out.println("Msg smaller clock");
                                 System.out.println(host_name + " " + msg.source);
                                 MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
                                 mutexAckMsg.setDest(msg.getSource());
                                 mutexAckMsg.setSource(host_name);
                                 sendMsgThroSocket(mutexAckMsg);
                             }
-                    	}
-                    	if (((Integer) (msg.clock.getTime()) >= (Integer) (clock.getTime()) )) {
-                        	System.out.println("Msg greater clock");
+                        } else {
+//                            int hostClock = (Integer) (clock.getTime());
+                            if (!delayedOutQueue.isEmpty()) {
+                                if (((Integer) (msg.clock.getTime()) > (Integer) (clock.getTime()))) {
+                                    System.out.println("Msg greater clock");
+//                                    || ((Integer) (msg.clock.getTime()) == (Integer) (clock.getTime())
+//                                    && Preferences.nodes.get(host_name) > Preferences.nodes.get(msg.getSource()))) {
+                                    System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
+                                    synchronized (mutexQueue) {
+                                        mutexQueue.add(msg);
+                                    }
+                                }
+                                if (((Integer) (msg.clock.getTime())).equals((Integer) (clock.getTime()))) {
+                                    System.out.println("Equal");
+                                    if (Preferences.nodes.get(host_name).getIndex() < Preferences.nodes.get(msg.getSource()).getIndex()) {
+                                        System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
+                                        synchronized (mutexQueue) {
+                                            mutexQueue.add(msg);
+                                        }
+                                    } else {
+                                        System.out.println(host_name + " " + msg.source);
+                                        MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
+                                        mutexAckMsg.setDest(msg.getSource());
+                                        mutexAckMsg.setSource(host_name);
+                                        sendMsgThroSocket(mutexAckMsg);
+                                    }
+                                }
+                                if (((Integer) (msg.clock.getTime()) < (Integer) (clock.getTime()))) {
+                                    System.out.println("Msg smaller clock");
+                                    System.out.println(host_name + " " + msg.source);
+                                    MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
+                                    mutexAckMsg.setDest(msg.getSource());
+                                    mutexAckMsg.setSource(host_name);
+                                    sendMsgThroSocket(mutexAckMsg);
+                                }
+                            }
+                            if (((Integer) (msg.clock.getTime()) >= (Integer) (clock.getTime()))) {
+                                System.out.println("Msg greater clock");
 //                                || ((Integer) (msg.clock.getTime()) == (Integer) (clock.getTime())
 //                                && Preferences.nodes.get(host_name) > Preferences.nodes.get(msg.getSource()))) {
-                            System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
-                            synchronized (mutexQueue) {
-                                mutexQueue.add(msg);
+                                System.out.println("WANT: Message from " + msg.getSource() + " added to mutexQueue");
+                                synchronized (mutexQueue) {
+                                    mutexQueue.add(msg);
+                                }
+                            } else {
+                                System.out.println(host_name + " " + msg.source);
+                                MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
+                                mutexAckMsg.setDest(msg.getSource());
+                                mutexAckMsg.setSource(host_name);
+                                sendMsgThroSocket(mutexAckMsg);
                             }
-                    } else {
-                    	System.out.println(host_name + " " + msg.source);
-                        MulticastMessage mutexAckMsg = new MulticastMessage(msg, MulticastMessage.MessageType.MUTEX_ACK);
-                        mutexAckMsg.setDest(msg.getSource());
-                        mutexAckMsg.setSource(host_name);
-                        sendMsgThroSocket(mutexAckMsg);
-                    }
-                    }
+                        }
                     }
                 }
                 break;
-
+                
             case MUTEX_ACK:
                 System.out.println("Received MUTEX_ACK from " + msg.getSource());
                 boolean mutextAcquired = true;
                 if (process_state == Process_State.WANTED) {
                     synchronized (arrMutexAckReceived) {
-                        arrMutexAckReceived[Preferences.nodes.get(msg.source)] = true;
+                    	arrMutexAckReceived[Preferences.nodes.get(msg.source).getIndex()] = true;
                         for (boolean b : arrMutexAckReceived) {
                             if (b == false) {
                                 mutextAcquired = false;
@@ -760,6 +764,7 @@ public class MessagePasser extends Thread {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void processHoldBackQueue() {
         synchronized (holdBackQueue) {
             MessageQueueEntry mqe = findSmallestInQueue(holdBackQueue);
@@ -771,15 +776,15 @@ public class MessagePasser extends Thread {
                 }
                 synchronized (inQueue) {
                     synchronized (causalVector) {
-                        if (causalVector.get(Preferences.nodes.get(mqe.getMessage().getSource()))
-                                >= new Integer(((Vector) mqe.getMessage().getClockService().getTime()).get(Preferences.nodes.get(mqe.getMessage().getSource())).toString())) {
+                        if (causalVector.get(Preferences.nodes.get(mqe.getMessage().getSource()).getIndex())
+                                >= new Integer(((Vector<Integer>) mqe.getMessage().getClockService().getTime()).get(Preferences.nodes.get(mqe.getMessage().getSource()).getIndex()).toString())) {
                             holdBackQueue.remove(mqe);
 //                            System.out.println("Duplicate message removed:" + mqe.timeStamp);
                         } else {
-                            if (causalVector.get(Preferences.nodes.get(mqe.getMessage().getSource())) + 1
-                                    == new Integer(((Vector) mqe.getMessage().getClockService().getTime()).get(Preferences.nodes.get(mqe.getMessage().getSource())).toString())) {
+                            if (causalVector.get(Preferences.nodes.get(mqe.getMessage().getSource()).getIndex()) + 1
+                                    == new Integer(((Vector<Integer>) mqe.getMessage().getClockService().getTime()).get(Preferences.nodes.get(mqe.getMessage().getSource()).getIndex()).toString())) {
                                 inQueue.add(mqe.getMessage());
-                                causalVector.setElementAt(new Integer(mqe.getTimeStamp().get(Preferences.nodes.get(mqe.getMessage().getSource())).toString()), Preferences.nodes.get(mqe.getMessage().getSource()));
+                                causalVector.setElementAt(new Integer(mqe.getTimeStamp().get(Preferences.nodes.get(mqe.getMessage().getSource()).getIndex()).toString()), Preferences.nodes.get(mqe.getMessage().getSource()).getIndex());
                                 holdBackQueue.remove(mqe);
 //                                System.out.println("Message removed from hold back queue: " + mqe.getTimeStamp() + " " + causalVector);
                             }
@@ -790,8 +795,10 @@ public class MessagePasser extends Thread {
         }
     }
 
-    private void updateMsgReceivedArray(MulticastMessage msg) {
-        Iterator arrayIterator;
+
+    @SuppressWarnings("unchecked")
+	private void updateMsgReceivedArray(MulticastMessage msg) {
+        Iterator<MessageQueueEntry> arrayIterator;
         MessageQueueEntry mqe = null;
         boolean[] mqeArray = null, msgArray = null;
         if (msg.getSource().equalsIgnoreCase(host_name)) {
@@ -804,9 +811,9 @@ public class MessagePasser extends Thread {
          */
         while (arrayIterator.hasNext()) {
             mqe = (MessageQueueEntry) arrayIterator.next();
-            int msgSrcIndex = Preferences.nodes.get(msg.getSource());
+            int msgSrcIndex = Preferences.nodes.get(msg.getSource()).getIndex();
             if (msg.getSource().equalsIgnoreCase(mqe.message.getSource())
-                    && (((Vector) msg.getClockService().getTime()).elementAt(msgSrcIndex).toString().equalsIgnoreCase(
+                    && (((Vector<Integer>) msg.getClockService().getTime()).elementAt(msgSrcIndex).toString().equalsIgnoreCase(
                     mqe.getTimeStamp().elementAt(msgSrcIndex).toString()))) {
                 msgArray = msg.getMsgReceivedArray();
                 mqeArray = mqe.getMsgReceivedArray();
@@ -848,31 +855,8 @@ public class MessagePasser extends Thread {
                             if (!msgReceivedArray[i]) {
                                 System.out.println("Sending RUT message to: " + Preferences.node_names.get(i)
                                         + " for message: " + smallest.timeStamp);
-                                String RUTMsg = smallest.getMessage().getDest() + "~";
-                                if (smallest.getMessage().getKind().equalsIgnoreCase("")) {
-                                    RUTMsg += " " + "~";
-                                } else {
-                                    RUTMsg += smallest.getMessage().getKind() + "~";
-                                }
-                                if (smallest.getMessage().getId().equalsIgnoreCase("")) {
-                                    RUTMsg += " " + "~";
-                                } else {
-                                    RUTMsg += smallest.getMessage().getId() + "~";
-                                }
-                                RUTMsg += smallest.getMessage().getClockService().getTime().toString() + "~";
-                                if (smallest.getMessage().getData().equals("")) {
-                                    RUTMsg += " " + "~";
-                                } else {
-                                    RUTMsg += smallest.getMessage().getData().toString() + "~";
-                                }
-                                RUTMsg += smallest.getMessage().getSource() + "~";
-                                for (int j = 0; j
-                                        < smallest.getMsgReceivedArray().length; j++) {
-                                    RUTMsg += (smallest.getMsgReceivedArray())[j] + ",";
-                                }
-                                RUTMsg = RUTMsg.substring(0, RUTMsg.length() - 1);
-                                MulticastMessage rutMsg = new MulticastMessage(Preferences.node_names.get(i), Preferences.MULTICAST_MESSAGE, Preferences.MULTICAST_MESSAGE,
-                                        RUTMsg, smallest.getMessage().getClockService(), false, MulticastMessage.MessageType.RUT, host_name);
+                                MulticastMessage rutMsg = new MulticastMessage(smallest.getMessage(), MulticastMessage.MessageType.RUT);
+                                rutMsg.setDest(Preferences.node_names.get(i));
                                 sendMsgThroSocket(rutMsg);
                             }
                         }
@@ -881,7 +865,7 @@ public class MessagePasser extends Thread {
             }
         }
     }
-
+    
     private MessageQueueEntry findSmallestInQueue(Vector<MessageQueueEntry> queue) {
         MessageQueueEntry smallest = null;
         if (queue != null) {
@@ -904,7 +888,7 @@ public class MessagePasser extends Thread {
     }
 
     private boolean isSmallestInQueue(Vector<MessageQueueEntry> messageQueue, MessageQueueEntry mqe) {
-        Iterator arrayIterator = messageQueue.iterator();
+        Iterator<MessageQueueEntry> arrayIterator = messageQueue.iterator();
         boolean isSmallest = true;
         /*
          * Find the Message Queue Entry with the smallest timestamp
@@ -956,6 +940,7 @@ public class MessagePasser extends Thread {
         System.out.println("Announcing presence");
     }
 
+    @SuppressWarnings("unchecked")
     private void updateHoldBackQueue(MulticastMessage msg) {
         Iterator<MessageQueueEntry> hbqIterator;
         synchronized (holdBackQueue) {
@@ -963,18 +948,18 @@ public class MessagePasser extends Thread {
             hbqIterator = holdBackQueue.iterator();
             while (hbqIterator.hasNext()) {
                 MessageQueueEntry hbqMQE = hbqIterator.next();
-                if (((Vector) msg.getClockService().getTime()).toString().equalsIgnoreCase(hbqMQE.getTimeStamp().toString())) {
+                if (((Vector<Integer>) msg.getClockService().getTime()).toString().equalsIgnoreCase(hbqMQE.getTimeStamp().toString())) {
                     hasEntry = true;
                     break;
                 }
             }
             if (!hasEntry) {
-                int msgSrcIndex = Preferences.nodes.get(msg.getSource());
-                int msgSeqNum = new Integer(((Vector) msg.getClockService().getTime()).get(msgSrcIndex).toString());
+                int msgSrcIndex = Preferences.nodes.get(msg.getSource()).getIndex();
+                int msgSeqNum = new Integer(((Vector<Integer>) msg.getClockService().getTime()).get(msgSrcIndex).toString());
                 if ((msg.msgType != MulticastMessage.MessageType.UPDATE_STATE && causalVector.get(msgSrcIndex) >= msgSeqNum)
                         || (msg.msgType == MulticastMessage.MessageType.UPDATE_STATE && causalVector.get(msgSrcIndex) < msgSeqNum)) {
                     holdBackQueue.add(new MessageQueueEntry(msg,
-                            (Vector) msg.getClockService().getTime(),
+                            (Vector<Integer>) msg.getClockService().getTime(),
                             msg.getMsgReceivedArray()));
                     updateMsgReceivedArray(msg);
                 }

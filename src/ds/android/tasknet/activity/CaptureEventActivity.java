@@ -1,8 +1,6 @@
 package ds.android.tasknet.activity;
 
 import java.io.InputStream;
-import java.io.Reader;
-
 import com.example.android.tasknet.R;
 
 import ds.android.tasknet.config.Preferences;
@@ -15,8 +13,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -47,20 +43,13 @@ public class CaptureEventActivity extends Activity {
 				messageParserBob.start();
 				
 				Message message = new Message("bob", "kind10", "id10", "hello world");
-				
-				
+								
 				try {
 					messageParserAlice.send(message);
 				} catch (InvalidMessageException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
-//				MediaPlayer mp = MediaPlayer.create(getBaseContext(), R.raw.aud);
-//			    mp.start();
-				
-				//Intent i = new Intent();
-				//startActivityForResult(i, GET_AUDIO);
 		}});
         distributeButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {

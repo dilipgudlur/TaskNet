@@ -35,7 +35,7 @@ public class VectorClock extends ClockService {
     }
 
     private VectorClock(Vector<Integer> vClock) {
-        vectorClock = new Vector(vClock);
+        vectorClock = new Vector<Integer>(vClock);
     }
 
     @Override
