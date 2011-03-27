@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.example.android.tasknet"
+      package="ds.android.tasknet"
       android:versionCode="1"
       android:versionName="1.0">
     <application android:icon="@drawable/icon" android:name="ds.android.tasknet.TaskNet" android:label="TaskNet">
@@ -15,6 +15,7 @@
 </activity>
 <activity android:name="ds.android.tasknet.activity.CaptureEventActivity"></activity>
 <activity android:name="ds.android.tasknet.activity.DistributeActivity"></activity>
+<activity android:name="ds.android.tasknet.activity.SimulateEvent"></activity>
 </application>
 
 

@@ -1,6 +1,6 @@
 package ds.android.tasknet.activity;
 
-import com.example.android.tasknet.R;
+import ds.android.tasknet.R;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -12,7 +12,7 @@ public class StartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        Intent i = new Intent(StartActivity.this, CaptureEventActivity.class);
+        Intent i = new Intent(StartActivity.this, SimulateEvent.class);
         startActivity(i);
         finish();
     }

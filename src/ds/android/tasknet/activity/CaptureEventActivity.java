@@ -1,7 +1,7 @@
 package ds.android.tasknet.activity;
 
 import java.io.InputStream;
-import com.example.android.tasknet.R;
+import ds.android.tasknet.R;
 
 import ds.android.tasknet.config.Preferences;
 import ds.android.tasknet.exceptions.InvalidMessageException;
