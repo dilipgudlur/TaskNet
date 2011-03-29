@@ -1,7 +1,5 @@
 package ds.android.tasknet.activity;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -103,7 +101,7 @@ public class SimulateEvent extends Activity {
 		};
 
 		listenForIncomingMessages();
-		// keepSendingProfileUpdates();
+		 keepSendingProfileUpdates();
 	}
 
 	private void listenForIncomingMessages() {
@@ -149,25 +147,6 @@ public class SimulateEvent extends Activity {
 									} catch (Exception e) {
 										e.printStackTrace();
 									}
-
-									// if (canSendMsg) {
-									// XStream nodeXStream = new XStream();
-									// nodeXStream.alias("node", Node.class);
-									// String nodeProfile = nodeXStream
-									// .toXML(Preferences.nodes
-									// .get(host_name));
-									// Message profileMsg = new Message(
-									// host_name, "", "", nodeProfile);
-									//
-									// profileMsg
-									// .setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
-									// try {
-									// mp.send(profileMsg);
-									// } catch (InvalidMessageException ex) {
-									// ex.printStackTrace();
-									// }
-									// canSendMsg = false;
-									// }
 									break;
 								case PROFILE_XCHG:
 									Node profileOfNode = (Node) msg.getData();
