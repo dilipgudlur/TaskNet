@@ -33,7 +33,7 @@ public class Message implements Serializable {
     protected NormalMsgType normalMsgType;
 
     public Message(String dest, String kind, String id, Serializable data) {
-        this.data = data.toString();
+        this.data = data;
         this.kind = kind;
         this.destination = dest;
         this.id = id;

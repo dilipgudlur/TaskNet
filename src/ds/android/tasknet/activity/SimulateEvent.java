@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 
-import com.thoughtworks.xstream.XStream;
-
 import ds.android.tasknet.R;
 import ds.android.tasknet.config.Node;
 import ds.android.tasknet.config.Preferences;
@@ -73,19 +71,16 @@ public class SimulateEvent extends Activity {
 				taskNum++;
 				String taskId = host_name + taskNum;
 				Task newTask = new Task(new Integer(10000), taskId);
-				XStream taskDetails = new XStream();
-				taskDetails.alias("task", Task.class);
 				taMessages.append("Sent Task advertisement: " + taskId + "\n");
 				taskGroup.put(taskId, new ArrayList<Node>());
-				 MulticastMessage mMsg = new MulticastMessage(node, kind,
-				 msgid,
-				 taskDetails.toXML(newTask), mp.getClock(), true,
-				 MulticastMessage.MessageType.TASK_ADV, host_name);
+				MulticastMessage mMsg = new MulticastMessage(node, kind, msgid,
+						newTask, mp.getClock(), true,
+						MulticastMessage.MessageType.TASK_ADV, host_name);
 				Preferences.crashNode = "";
 				// This will send message to self... for testing purposes
 				// If it doesn't work, check with first argument as "bob"
-//				Message msg = new Message("bob", "kind", "id", taskDetails
-//						.toXML(newTask));
+				// Message msg = new Message("bob", "kind", "id", taskDetails
+				// .toXML(newTask));
 				try {
 					mp.send(mMsg);
 				} catch (InvalidMessageException e) {
@@ -129,26 +124,14 @@ public class SimulateEvent extends Activity {
 									.obtain(guiRefresh, REFRESH);
 							final Bundle msgBundle = new Bundle();
 							if (msg instanceof MulticastMessage) {
-								switch (((MulticastMessage) msg)
-										.getMessageType()) {
+								switch (((MulticastMessage) msg).getMessageType()) {
 								case TASK_ADV:
-									msgBundle.putString(TXTMSG,
-											"Received task advertisement\n");
+									msgBundle.putString(TXTMSG,"Received task advertisement\n");
 									guiMessage.setData(msgBundle);
 									guiRefresh.sendMessage(guiMessage);
-									XStream nodeXStream = new XStream();
-									nodeXStream.alias("node", Node.class);
-									String nodeProfile = nodeXStream
-											.toXML(Preferences.nodes.put(
-													host_name,
-													Preferences.nodes
-															.get(host_name)));
-									Message profileMsg = new Message(
-											((MulticastMessage) msg)
-													.getSource(),
-											"", "", nodeProfile);
-									profileMsg
-											.setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
+									Message profileMsg = new Message(((MulticastMessage) msg).getSource(),
+											"", "", Preferences.nodes.get(host_name));
+									profileMsg.setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
 									try {
 										mp.send(profileMsg);
 									} catch (InvalidMessageException ex) {
@@ -159,8 +142,7 @@ public class SimulateEvent extends Activity {
 							} else {
 								switch (msg.getNormalMsgType()) {
 								case NORMAL:
-									msgBundle.putString(TXTMSG, msg.getData()
-											+ "\n");
+									msgBundle.putString(TXTMSG, msg.getData() + "\n");
 									guiMessage.setData(msgBundle);
 									try {
 										guiRefresh.sendMessage(guiMessage);
@@ -168,30 +150,27 @@ public class SimulateEvent extends Activity {
 										e.printStackTrace();
 									}
 
-//									if (canSendMsg) {
-//										XStream nodeXStream = new XStream();
-//										nodeXStream.alias("node", Node.class);
-//										String nodeProfile = nodeXStream
-//												.toXML(Preferences.nodes
-//														.get(host_name));
-//										Message profileMsg = new Message(
-//												host_name, "", "", nodeProfile);
-//
-//										profileMsg
-//												.setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
-//										try {
-//											mp.send(profileMsg);
-//										} catch (InvalidMessageException ex) {
-//											ex.printStackTrace();
-//										}
-//										canSendMsg = false;
-//									}
+									// if (canSendMsg) {
+									// XStream nodeXStream = new XStream();
+									// nodeXStream.alias("node", Node.class);
+									// String nodeProfile = nodeXStream
+									// .toXML(Preferences.nodes
+									// .get(host_name));
+									// Message profileMsg = new Message(
+									// host_name, "", "", nodeProfile);
+									//
+									// profileMsg
+									// .setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
+									// try {
+									// mp.send(profileMsg);
+									// } catch (InvalidMessageException ex) {
+									// ex.printStackTrace();
+									// }
+									// canSendMsg = false;
+									// }
 									break;
 								case PROFILE_XCHG:
-									XStream readProfile = new XStream();
-									readProfile.alias("node", Node.class);
-									Node profileOfNode = (Node) readProfile
-											.fromXML(msg.getData().toString());
+									Node profileOfNode = (Node) msg.getData();
 									msgBundle.putString(TXTMSG, profileOfNode
 											+ "\n");
 									guiMessage.setData(msgBundle);
@@ -230,16 +209,10 @@ public class SimulateEvent extends Activity {
 						Thread.sleep(Preferences.PROFILE_UPDATE_TIME_PERIOD);
 						try {
 							synchronized (Preferences.nodes) {
-								Node updateNode = Preferences.nodes
-										.get(host_name);
+								Node updateNode = Preferences.nodes.get(host_name);
 								updateNode.setBatteryLevel(1);
-								XStream profileDetails = new XStream();
-								profileDetails.alias("node", Node.class);
-								Message profileUpdate = new Message(
-										Preferences.COORDINATOR, "", "",
-										profileDetails.toXML(updateNode));
-								profileUpdate
-										.setNormalMsgType(Message.NormalMsgType.PROFILE_UPDATE);
+								Message profileUpdate = new Message(Preferences.COORDINATOR, "", "",updateNode);
+								profileUpdate.setNormalMsgType(Message.NormalMsgType.PROFILE_UPDATE);
 								mp.send(profileUpdate);
 							}
 						} catch (InvalidMessageException ex) {
