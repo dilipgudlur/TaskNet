@@ -29,7 +29,7 @@ public class Node implements Serializable {
         processorLoad = (index+1) * 100;
         batteryLevel = (index+1) * 10;
     }
-
+    
     public void setTaskId(String id){
         taskId = id;
     }

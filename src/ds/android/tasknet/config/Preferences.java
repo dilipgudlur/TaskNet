@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class Preferences {
 
-	public static final String conf_file = "mnt" + System.getProperty("file.separator") + "sdcard" 
+	public static final String conf_file = System.getProperty("file.separator") + "mnt" + System.getProperty("file.separator") + "sdcard" 
 		+ System.getProperty("file.separator") + "ppfile.ini";
 	public static final int num_kind = 6;
 	public static final int num_msgid = 6;

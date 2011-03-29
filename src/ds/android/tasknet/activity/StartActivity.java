@@ -12,7 +12,7 @@ public class StartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        Intent i = new Intent(StartActivity.this, SimulateEvent.class);
+        Intent i = new Intent(StartActivity.this, ConfigureNodeActivity.class);
         startActivity(i);
         finish();
     }

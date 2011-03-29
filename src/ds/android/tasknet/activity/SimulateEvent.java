@@ -1,5 +1,7 @@
 package ds.android.tasknet.activity;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -12,6 +14,7 @@ import ds.android.tasknet.config.Preferences;
 import ds.android.tasknet.msgpasser.Message;
 import ds.android.tasknet.msgpasser.MessagePasser;
 import ds.android.tasknet.msgpasser.MulticastMessage;
+import ds.android.tasknet.task.Task;
 import ds.android.tasknet.clock.*;
 import ds.android.tasknet.exceptions.InvalidMessageException;
 import android.app.Activity;
@@ -33,69 +36,88 @@ public class SimulateEvent extends Activity {
 	Handler guiRefresh;
 	final int REFRESH = 1;
 	final String TXTMSG = "txtmsg";
-	
+	boolean canSendMsg = true;
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.tasknet);
-		host_name = "alice";
+		((Button) findViewById(R.id.btnExitTaskNet))
+				.setOnClickListener(new OnClickListener() {
+
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						finish();
+						System.exit(0);
+					}
+				});
+		host_name = getIntent().getStringExtra("NodeName");
 		taskGroup = new HashMap<String, ArrayList<Node>>();
-		
+
 		Preferences.setHostDetails(Preferences.conf_file, host_name);
 		mp = new MessagePasser(Preferences.conf_file, host_name,
 				ClockFactory.ClockType.VECTOR, Preferences.nodes.size());
 		mp.start();
-		
+
 		taMessages = (EditText) findViewById(R.id.taMsgs);
 		taskButton = (Button) findViewById(R.id.btnTaskAdv);
-		
+
 		taskButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				String node = "";
+				String kind = "";
+				String msgid = "";
+				taskNum++;
+				String taskId = host_name + taskNum;
+				Task newTask = new Task(new Integer(10000), taskId);
+				XStream taskDetails = new XStream();
+				taskDetails.alias("task", Task.class);
+				taMessages.append("Sent Task advertisement: " + taskId + "\n");
+				taskGroup.put(taskId, new ArrayList<Node>());
+				 MulticastMessage mMsg = new MulticastMessage(node, kind,
+				 msgid,
+				 taskDetails.toXML(newTask), mp.getClock(), true,
+				 MulticastMessage.MessageType.TASK_ADV, host_name);
+				Preferences.crashNode = "";
 				// This will send message to self... for testing purposes
 				// If it doesn't work, check with first argument as "bob"
-				Message msg = new Message(host_name, "kind", "id",
-						"Hello world");
+//				Message msg = new Message("bob", "kind", "id", taskDetails
+//						.toXML(newTask));
 				try {
-					mp.send(msg);
+					mp.send(mMsg);
 				} catch (InvalidMessageException e) {
 					e.printStackTrace();
 				}
 			}
-								
 		});
 
-				
-		guiRefresh = new Handler(){
+		guiRefresh = new Handler() {
 			@Override
 			public void handleMessage(android.os.Message msg) {
-			switch(msg.what){
-			     case REFRESH:
-			            /*Refresh UI*/
-			    	 String m = msg.getData().getString(TXTMSG);			    	 
-			    	 taMessages.append(m);
-			         break;
-			   }
+				switch (msg.what) {
+				case REFRESH:
+					/* Refresh UI */
+					String m = msg.getData().getString(TXTMSG);
+					taMessages.append(m);
+					break;
+				}
 			}
 		};
-				
-
 
 		listenForIncomingMessages();
-		keepSendingProfileUpdates();
+		// keepSendingProfileUpdates();
 	}
 
-	private void listenForIncomingMessages() {		
+	private void listenForIncomingMessages() {
 		/*
 		 * This thread keeps polling for any incoming messages and displays them
 		 * to user
 		 */
 
-		
 		(new Thread() {
-
 			@Override
 			public void run() {
 				while (true) {
@@ -103,21 +125,24 @@ public class SimulateEvent extends Activity {
 						Thread.sleep(10);
 						Message msg = mp.receive();
 						if (msg != null) {
-							final android.os.Message guiMessage = android.os.Message.obtain(guiRefresh, REFRESH);
-							final Bundle msgBundle = new Bundle();							
+							final android.os.Message guiMessage = android.os.Message
+									.obtain(guiRefresh, REFRESH);
+							final Bundle msgBundle = new Bundle();
 							if (msg instanceof MulticastMessage) {
 								switch (((MulticastMessage) msg)
 										.getMessageType()) {
 								case TASK_ADV:
-									msgBundle.putString(TXTMSG, "Received task advertisement\n");
+									msgBundle.putString(TXTMSG,
+											"Received task advertisement\n");
 									guiMessage.setData(msgBundle);
 									guiRefresh.sendMessage(guiMessage);
-									//taMessages.append("Received task advertisement\n");
 									XStream nodeXStream = new XStream();
 									nodeXStream.alias("node", Node.class);
 									String nodeProfile = nodeXStream
-											.toXML(Preferences.nodes
-													.get(host_name));
+											.toXML(Preferences.nodes.put(
+													host_name,
+													Preferences.nodes
+															.get(host_name)));
 									Message profileMsg = new Message(
 											((MulticastMessage) msg)
 													.getSource(),
@@ -133,27 +158,45 @@ public class SimulateEvent extends Activity {
 								}
 							} else {
 								switch (msg.getNormalMsgType()) {
-								case NORMAL:									
-									msgBundle.putString(TXTMSG, msg.getData() + "\n");
+								case NORMAL:
+									msgBundle.putString(TXTMSG, msg.getData()
+											+ "\n");
 									guiMessage.setData(msgBundle);
 									try {
-									guiRefresh.sendMessage(guiMessage);
-									}
-									catch(Exception e)
-									{
+										guiRefresh.sendMessage(guiMessage);
+									} catch (Exception e) {
 										e.printStackTrace();
 									}
-									//taMessages.append(msg.getData() + "\n");
+
+//									if (canSendMsg) {
+//										XStream nodeXStream = new XStream();
+//										nodeXStream.alias("node", Node.class);
+//										String nodeProfile = nodeXStream
+//												.toXML(Preferences.nodes
+//														.get(host_name));
+//										Message profileMsg = new Message(
+//												host_name, "", "", nodeProfile);
+//
+//										profileMsg
+//												.setNormalMsgType(Message.NormalMsgType.PROFILE_XCHG);
+//										try {
+//											mp.send(profileMsg);
+//										} catch (InvalidMessageException ex) {
+//											ex.printStackTrace();
+//										}
+//										canSendMsg = false;
+//									}
 									break;
 								case PROFILE_XCHG:
 									XStream readProfile = new XStream();
 									readProfile.alias("node", Node.class);
 									Node profileOfNode = (Node) readProfile
 											.fromXML(msg.getData().toString());
-									msgBundle.putString(TXTMSG, profileOfNode + "\n");
+									msgBundle.putString(TXTMSG, profileOfNode
+											+ "\n");
 									guiMessage.setData(msgBundle);
-									guiRefresh.sendMessage(guiMessage);									
-									//taMessages.append(profileOfNode + "\n");
+									guiRefresh.sendMessage(guiMessage);
+									// taMessages.append(profileOfNode + "\n");
 									synchronized (taskGroup) {
 										String taskId = profileOfNode
 												.getTaskId();
