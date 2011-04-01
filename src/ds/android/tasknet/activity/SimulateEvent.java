@@ -1,5 +1,9 @@
 package ds.android.tasknet.activity;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -14,6 +18,13 @@ import ds.android.tasknet.task.Task;
 import ds.android.tasknet.clock.*;
 import ds.android.tasknet.exceptions.InvalidMessageException;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -33,6 +44,11 @@ public class SimulateEvent extends Activity {
 	final int REFRESH = 1;
 	final String TXTMSG = "txtmsg";
 	boolean canSendMsg = true;
+	long cpuTotal;
+	long cpuIdle;
+	float cpuLoad;
+	int batteryLevel;;
+
 
 	/** Called when the activity is first created. */
 	@Override
@@ -63,6 +79,7 @@ public class SimulateEvent extends Activity {
 		taskButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				
 				String node = "";
 				String kind = "";
 				String msgid = "";
@@ -101,7 +118,7 @@ public class SimulateEvent extends Activity {
 		};
 
 		listenForIncomingMessages();
-		 keepSendingProfileUpdates();
+		keepSendingProfileUpdates();
 	}
 
 	private void listenForIncomingMessages() {
@@ -157,7 +174,7 @@ public class SimulateEvent extends Activity {
 									// taMessages.append(profileOfNode + "\n");
 									synchronized (taskGroup) {
 										String taskId = profileOfNode
-												.getTaskId();
+												.getTaskid();
 										ArrayList<Node> taskNodes = taskGroup
 												.get(taskId);
 										if (taskNodes == null) {
@@ -189,7 +206,7 @@ public class SimulateEvent extends Activity {
 						try {
 							synchronized (Preferences.nodes) {
 								Node updateNode = Preferences.nodes.get(host_name);
-								updateNode.setBatteryLevel(1);
+								updateNode.update(getCurrentRAM(),getCPUusage(),getBatteryLevel());
 								Message profileUpdate = new Message(Preferences.COORDINATOR, "", "",updateNode);
 								profileUpdate.setNormalMsgType(Message.NormalMsgType.PROFILE_UPDATE);
 								mp.send(profileUpdate);
@@ -204,4 +221,53 @@ public class SimulateEvent extends Activity {
 			}
 		}).start();
 	}
+    /*************************Claire's code**********************************/
+    public int getBatteryLevel() {//
+//        final int batteryLevel;
+    	BroadcastReceiver batteryLevelReceiver = new BroadcastReceiver(){
+    		public void onReceive(Context context, Intent intent) {
+                context.unregisterReceiver(this);
+                int rawlevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                if (rawlevel >= 0 && scale > 0) 
+                    batteryLevel = (rawlevel * 100) / scale;               
+            }
+        };
+        IntentFilter batteryLevelFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(batteryLevelReceiver, batteryLevelFilter);
+        return batteryLevel;
+    }
+    
+    private long getCurrentRAM(){
+        MemoryInfo mi = new MemoryInfo();
+        ActivityManager activityManager = (ActivityManager)getSystemService(ACTIVITY_SERVICE);
+        activityManager.getMemoryInfo(mi);
+        return mi.availMem / 1048576L;
+     }
+   
+	private float getCPUusage()
+	{
+	    try
+	    {
+	        BufferedReader reader = new BufferedReader( new InputStreamReader( new FileInputStream( "/proc/stat" ) ), 1000 );
+	        String load = reader.readLine();
+	        reader.close();     
+	
+	        String[] toks = load.split(" ");
+	
+	        long currTotal = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[4]);
+	        long currIdle = Long.parseLong(toks[5]);
+	
+	        cpuLoad = (currTotal - cpuTotal) * 100.0f / (currTotal - cpuTotal + currIdle - cpuIdle);
+	        cpuTotal = currTotal;
+	        cpuIdle = currIdle;
+	    }
+	    catch(IOException ex)
+	    {
+	        ex.printStackTrace();           
+	    }
+	    return cpuLoad;
+	}
+    
+    /********************************************************************************/
 }

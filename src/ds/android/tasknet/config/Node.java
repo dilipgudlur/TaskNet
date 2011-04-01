@@ -3,6 +3,8 @@ package ds.android.tasknet.config;
 import java.io.Serializable;
 import java.net.InetAddress;
 
+
+
 /**
  *
  * @author Divya_PKV
@@ -16,25 +18,25 @@ public class Node implements Serializable {
 	String nodeName;
     Integer nodeIndex;
     InetAddress nodeAddress;
-    Integer memoryCapacity;
-    Integer processorLoad;
+    long memoryCapacity;
+    float processorLoad;
     Integer batteryLevel;
     String taskId;
-
+	
     Node(String name, int index, InetAddress address) {
         nodeName = name;
         nodeIndex = index;
         nodeAddress = address;
-        memoryCapacity = (index+1) * 1000;
-        processorLoad = (index+1) * 100;
-        batteryLevel = (index+1) * 10;
+        memoryCapacity = 0;
+        processorLoad = 0;
+        batteryLevel = 0;
     }
-    
-    public void setTaskId(String id){
+
+    public void setTaskid(String id){
         taskId = id;
     }
 
-    public String getTaskId(){
+    public String getTaskid(){
         return taskId;
     }
 
@@ -50,28 +52,24 @@ public class Node implements Serializable {
         return nodeAddress;
     }
 
-    public int getMemoryCapacity() {
+    public long getMemoryCapacity() {
         return memoryCapacity;
     }
 
-    public int getProcessorLoad() {
+    public float getProcessorLoad() {
         return processorLoad;
-    }
-
-    public int getBatteryLevel() {
-        return batteryLevel;
     }
 
     public void setBatteryLevel(int value) {
         batteryLevel -= value;
-    }
+    }   
 
-    public void update(Node nodeToBeUpdated) {
-        memoryCapacity = nodeToBeUpdated.getMemoryCapacity();
-        processorLoad = nodeToBeUpdated.getProcessorLoad();
-        batteryLevel = nodeToBeUpdated.getBatteryLevel();
+    public void update(long currentRAM, float CPUsage, int currentBatteryLevel) {
+        memoryCapacity = currentRAM;
+        processorLoad = CPUsage;
+        batteryLevel = currentBatteryLevel;
     }
-    
+        
     @Override
     public String toString() {
         String str = "";
