@@ -26,6 +26,14 @@ public class DistributeTaskActivity extends Activity {
 
 		Button distributeGlobalButton = (Button) findViewById(R.id.distributeGlobalButton);
 		Button distributeLocalButton = (Button) findViewById(R.id.distributeLocalButton);
+		
+		((Button)findViewById(R.id.exitButton)).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				finish();
+				System.exit(0);
+			}
+		});
 
 		host = getIntent().getStringExtra("NodeName");
 		configuration_file = Preferences.conf_file;

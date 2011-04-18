@@ -8,5 +8,6 @@
 <TextView android:text="TaskLoad" android:textSize="15dip" android:layout_height="40dip" android:layout_width="120dip" android:layout_x="150dip"/>
 <EditText android:id="@+id/taskLoad" android:layout_width="120dip" android:layout_height="40dip" android:layout_x="150dip" android:layout_y="20dip"/>
 <Button android:id="@+id/distributeGlobalButton" android:layout_width="120dip" android:layout_height="40dip" android:text="Distribute" android:layout_x="20dip" android:layout_y="100dip"></Button>
-<Button android:id="@+id/distributeLocalButton" android:layout_width="150dip" android:layout_height="40dip" android:text="Distribute Locally" android:layout_x="150dip" android:layout_y="100dip"></Button>
+<Button android:id="@+id/distributeLocalButton" android:layout_width="130dip" android:layout_height="40dip" android:text="Distribute Locally" android:layout_x="150dip" android:layout_y="100dip"></Button>
+<Button android:id="@+id/exitButton" android:layout_width="120dip" android:layout_height="40dip" android:text="Exit" android:layout_x="90dip" android:layout_y="160dip"></Button>
 </AbsoluteLayout>
