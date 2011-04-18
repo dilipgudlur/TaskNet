@@ -2,6 +2,7 @@ package ds.android.tasknet.config;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,22 +20,26 @@ public class Node implements Serializable {
     private static final long serialVersionUID = 1L;
     String nodeName;
     Integer nodeIndex;
-    InetAddress nodeAddress;
+    String nodeAddress;
+    Integer nodePort;
     long memoryCapacity;
     float processorLoad;
     Integer batteryLevel;
     Map<String, Task> acceptedTasks = new HashMap<String, Task>();
+    int promisedLoad;
 
-    Node(String name, int index, InetAddress address) {
+    public Node(String name, InetAddress address, Integer port) {
         nodeName = name;
-        nodeIndex = index;
-        nodeAddress = address;
+        nodeIndex = -1;
+        nodeAddress = address.getHostAddress();
+        nodePort = port;
         memoryCapacity = 0;
         processorLoad = 0;
         batteryLevel = 0;
+        promisedLoad = 0;
     }
 
-    public int getIndex() {
+    public Integer getIndex() {
         return nodeIndex;
     }
 
@@ -42,8 +47,20 @@ public class Node implements Serializable {
         return nodeName;
     }
 
-    public InetAddress getAdrress() {
-        return nodeAddress;
+    public InetAddress getAdrress() throws UnknownHostException {
+        return InetAddress.getByName(nodeAddress);
+    }
+
+    public void setNodeIndex(Integer nodeIndex) {
+        this.nodeIndex = nodeIndex;
+    }
+    
+    public Integer getNodePort() {
+        return nodePort;
+    }
+
+    public void setNodePort(Integer nodePort) {
+        this.nodePort = nodePort;
     }
 
     public long getMemoryCapacity() {
@@ -86,7 +103,26 @@ public class Node implements Serializable {
     	this.acceptedTasks.remove(taskId);
     }
     
-    @Override
+    public Task getAcceptedTaskByTaskId(String taskId) {
+    	return this.acceptedTasks.get(taskId);
+    }
+    
+    public int getPromisedLoad() {
+		return promisedLoad;
+	}
+
+	public void setPromisedLoad(int promisedLoad) {
+		this.promisedLoad = promisedLoad;
+	}
+	
+	public void incrPromisedLoad(int promisedLoad) {
+		this.promisedLoad += promisedLoad;
+	}
+
+	public void decrPromisedLoad(int promisedLoad) {
+		this.promisedLoad -= promisedLoad;
+	}
+	@Override
     public String toString() {
         String str = "";
         str += "Name: " + nodeName;

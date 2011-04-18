@@ -11,7 +11,6 @@ public class StartActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        
         Intent i = new Intent(StartActivity.this, ConfigureNodeActivity.class);
         startActivity(i);
         finish();

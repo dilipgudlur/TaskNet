@@ -12,9 +12,9 @@
 <intent-filter><action android:name="android.intent.action.MAIN"></action>
 <category android:name="android.intent.category.LAUNCHER"></category>
 </intent-filter>
-</activity><activity android:name="ds.android.tasknet.activity.ConfigureNodeActivity">
-</activity>
-<activity android:name="ds.android.tasknet.activity.DistributeTaskActivity"></activity>
+</activity><activity android:name="ds.android.tasknet.activity.ConfigureNodeActivity" /> 
+  <activity android:name="ds.android.tasknet.activity.DistributeTaskActivity" /> 
+
 
 
 </application>
