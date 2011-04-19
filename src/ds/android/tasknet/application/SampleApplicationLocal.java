@@ -8,13 +8,13 @@ package ds.android.tasknet.application;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import ds.android.tasknet.mfcc.MFCC;
+
 /* * @author Divya_PKV
  */
 public class SampleApplicationLocal {
 
     public ArrayList<Double> method1(int a, int b) {
-        //System.out.println("Method1: a = " + a + " b = " + b);
-        //return a + b;
         
         int nnumberofFilters = a;	//earlier value was 24, now set to a
         int nlifteringCoefficient = 22;
@@ -23,12 +23,7 @@ public class SampleApplicationLocal {
         int nnumberOfMFCCParameters = b; //earlier value was 12, now set to b//without considering 0-th
         double dsamplingFrequency = 8000.0;
         int nFFTLength = 512;
-        //Vector[] mfcc_parameters = new Vector[15];
-        
         ArrayList<Double> mfcc_parameters = new ArrayList<Double>();
-        
-        //Double d;
-        
         
         if (oisZeroThCepstralCoefficientCalculated) {
           //take in account the zero-th MFCC
@@ -58,7 +53,6 @@ public class SampleApplicationLocal {
         	mfcc_parameters.add(dparameters[i]);
         	     	 
         return mfcc_parameters;
-      
     }
 
     public void method2() {
