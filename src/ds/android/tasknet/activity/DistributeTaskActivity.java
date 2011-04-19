@@ -55,7 +55,6 @@ public class DistributeTaskActivity extends Activity {
 						.toString());
 				distributor.distribute(methodName.getText().toString(),
 						taskload);
-
 			}
 		});
 
