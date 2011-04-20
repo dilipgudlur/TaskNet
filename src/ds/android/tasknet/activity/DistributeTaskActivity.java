@@ -1,9 +1,14 @@
 package ds.android.tasknet.activity;
 
+import java.util.ArrayList;
+
 import ds.android.tasknet.R;
 
 import ds.android.tasknet.config.Preferences;
+import ds.android.tasknet.application.*;
 import ds.android.tasknet.distributor.*;
+import ds.android.tasknet.logger.*;
+import ds.android.tasknet.task.TaskLookup;
 import android.app.Activity;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -16,8 +21,11 @@ import android.widget.EditText;
 public class DistributeTaskActivity extends Activity {
 
 	static final int GET_AUDIO = 99;
-	String host, configuration_file, clockType;
+	String host, configuration_file, clockType,methodname;
 	TaskDistributor distributor;
+	EditText taskLoad,methodName;
+	int taskload;
+	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -26,6 +34,8 @@ public class DistributeTaskActivity extends Activity {
 
 		Button distributeGlobalButton = (Button) findViewById(R.id.distributeGlobalButton);
 		Button distributeLocalButton = (Button) findViewById(R.id.distributeLocalButton);
+		taskLoad = (EditText) findViewById(R.id.taskLoad);
+		methodName = (EditText) findViewById(R.id.methodName);
 		
 		((Button)findViewById(R.id.exitButton)).setOnClickListener(new OnClickListener() {
 			@Override
@@ -46,22 +56,27 @@ public class DistributeTaskActivity extends Activity {
 				(ipAddress >> 8 & 0xff), (ipAddress >> 16 & 0xff),
 				(ipAddress >> 24 & 0xff));
 		distributor = new TaskDistributor(host, configuration_file, ip);
+		
 		distributeGlobalButton.setOnClickListener(new OnClickListener() {
-			EditText taskLoad = (EditText) findViewById(R.id.taskLoad);
-			EditText methodName = (EditText) findViewById(R.id.methodName);
-
-			public void onClick(View v) {
-				Integer taskload = Integer.parseInt(taskLoad.getText()
-						.toString());
-				distributor.distribute(methodName.getText().toString(),
-						taskload);
+			public void onClick(View v) {				
+				//long startTime = System.currentTimeMillis();
+				taskload = Integer.parseInt(taskLoad.getText().toString());
+				methodname = methodName.getText().toString();
+				distributor.distribute(methodname,taskload);
+				//long elapsedTime = System.currentTimeMillis() - startTime;
+				//distributor.logMessage("Elapsed Time:"+ Long.toString(elapsedTime));
 			}
 		});
 
 		distributeLocalButton.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				// System.out.println((new Integer((new
-				// SampleApplicationLocal()).method1(10, 20))).toString());
+			public void onClick(View v) {			
+				//long startTime = System.currentTimeMillis();
+				taskload = Integer.parseInt(taskLoad.getText().toString());
+				methodname = methodName.getText().toString();				 
+				distributor.executeTaskLocally(methodname,taskload);//defined in TaskDistributor.java				
+				//long elapsedTime = System.currentTimeMillis() - startTime;
+				//distributor.logMessage("Elapsed Time:"+ Long.toString(elapsedTime));
+				
 			}
 		});
     }

@@ -6,6 +6,7 @@
 package ds.android.tasknet.application;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Vector;
 
 import ds.android.tasknet.mfcc.MFCC;
@@ -16,11 +17,11 @@ public class SampleApplicationLocal {
 
     public ArrayList<Double> method1(int a, int b) {
         
-        int nnumberofFilters = a;	//earlier value was 24, now set to a
-        int nlifteringCoefficient = 22;
+        int nnumberofFilters = 24;	
+        int nlifteringCoefficient = b;	//earlier value was 22, now set to a-20
         boolean oisLifteringEnabled = true;
         boolean oisZeroThCepstralCoefficientCalculated = false;
-        int nnumberOfMFCCParameters = b; //earlier value was 12, now set to b//without considering 0-th
+        int nnumberOfMFCCParameters = a; //earlier value was 12, now set to a-10//without considering 0-th
         double dsamplingFrequency = 8000.0;
         int nFFTLength = 512;
         ArrayList<Double> mfcc_parameters = new ArrayList<Double>();
@@ -40,21 +41,22 @@ public class SampleApplicationLocal {
                              oisLifteringEnabled,
                              nlifteringCoefficient,
                              oisZeroThCepstralCoefficientCalculated);
-
-        //System.out.println(mfcc.toString());
-
         //simulate a frame of speech
         double[] x = new double[160];
-        x[2]=10; x[4]=14;
+        Random rand = new Random();
+        x[2]= rand.nextDouble(); x[4]= rand.nextDouble();
         double[] dparameters = mfcc.getParameters(x);
-        //System.out.println("MFCC parameters:");
-        //mfcc_parameters.length = dparameters.length ;
         for (int i = 0; i < dparameters.length; i++) 
+        {
         	mfcc_parameters.add(dparameters[i]);
+        }
         	     	 
         return mfcc_parameters;
     }
 
+    public void executeLocalApp()
+    {}
+    
     public void method2() {
         System.out.println("Method2");
     }

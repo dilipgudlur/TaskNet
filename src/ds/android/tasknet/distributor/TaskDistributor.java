@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -84,8 +85,7 @@ public class TaskDistributor {
 										logMessage("Received task advertisement from: "
 												+ ((MulticastMessage) msg)
 														.getSource());
-										Node host_node = Preferences.nodes
-												.get(host);
+										Node host_node = Preferences.nodes.get(host);
 										float remaining_load = Preferences.TOTAL_LOAD_AT_NODE
 												- (receivedTask.taskLoad
 												/*
@@ -185,11 +185,9 @@ public class TaskDistributor {
 									distributeTask(taskAdvReply);
 									break;
 								case DISTRIBUTED_TASK:
-									TaskChunk taskChunk = (TaskChunk) msg
-											.getData();
+									TaskChunk taskChunk = (TaskChunk) msg.getData();											
 									// taMessages.append(taskChunk.toString());
-									DistributedTask distTask = taskChunk
-											.getDsTask();
+									DistributedTask distTask = taskChunk.getDsTask();											
 									TaskResult result;
 									Map<Integer, TaskResult> tempResults = taskResults
 											.get(distTask.getTaskId());
@@ -210,8 +208,7 @@ public class TaskDistributor {
 										tempResults = new HashMap<Integer, TaskResult>();
 									}
 
-									tempResults.put(
-											taskChunk.getSequenceNumber(),
+									tempResults.put(taskChunk.getSequenceNumber(),
 											result);
 									taskResults.put(distTask.getTaskId(),
 											tempResults);
@@ -373,8 +370,7 @@ public class TaskDistributor {
 				distMsg.setNormalMsgType(Message.NormalMsgType.DISTRIBUTED_TASK);
 
 				try {
-					System.out
-							.println("Sending Distributed_task message from: "
+					System.out.println("Sending Distributed_task message from: "
 									+ node.getName() + " " + node.getAdrress()
 									+ " " + node.getNodePort());
 				} catch (UnknownHostException e) {
@@ -393,8 +389,7 @@ public class TaskDistributor {
 				if (taskLookup.getTask().getTaskLoad() <= 0
 						&& taskLookup.getTaskGroup().size() == taskLookup
 								.getTaskResults().size()) {
-					taskLookup
-							.setStatus(Preferences.TASK_STATUS.RECEIVED_RESULTS);
+					taskLookup.setStatus(Preferences.TASK_STATUS.RECEIVED_RESULTS);
 				}
 				// Merge results
 				if (taskLookup.getStatus() == Preferences.TASK_STATUS.RECEIVED_RESULTS) {
@@ -409,7 +404,7 @@ public class TaskDistributor {
 		}).start();
 	}
 
-	private void logMessage(String msgString) {
+	public void logMessage(String msgString) {
 		Message logMsg = new Message(Preferences.LOGGER_NAME, "", "", msgString
 				+ "\n");
 		logMsg.setLogSource(host);
@@ -545,5 +540,18 @@ public class TaskDistributor {
 				}
 			}
 		}).start();
+	}
+	
+	public void executeTaskLocally(String methodName, Integer taskLoad)
+	{
+		int remainingLoad = Preferences.TOTAL_LOAD_AT_NODE - Preferences.host_reserved_load ;
+		int taskLoops = (int) Math.ceil(taskLoad / remainingLoad);
+		SampleApplicationLocal localApp = new SampleApplicationLocal();
+		ArrayList<ArrayList<Double>> mfcc_parameters = new ArrayList<ArrayList<Double>>();
+		for(int i=0;i<taskLoops;i++)
+		{
+			mfcc_parameters.add(localApp.method1(10, 20));
+		}
+		logMessage("Local Result from "+host+":"+mfcc_parameters.toString());
 	}
 }
