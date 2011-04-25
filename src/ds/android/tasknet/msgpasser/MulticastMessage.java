@@ -19,11 +19,10 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
     };
     boolean[] msgReceived;
     MessageType msgType;
-    String source;
 
     public MulticastMessage(String dest, String kind, String id, Serializable data, ClockService c,
             boolean newTimeStamp, MessageType mType, String src) {
-        super(dest, kind, id, data, c, newTimeStamp);
+        super(dest, kind, id, data, c, newTimeStamp, src);
         msgReceived = new boolean[Preferences.nodes.size()];
         for (int i = 0; i < msgReceived.length; i++) {
             if (i == Preferences.host_index) {
@@ -33,14 +32,13 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
             }
         }
         msgType = mType;
-        source = src;
     }
 
     public MulticastMessage(MulticastMessage m, MessageType type) {
-        super("", Preferences.MULTICAST_MESSAGE, Preferences.MULTICAST_MESSAGE, m.getData(), m.getClockService(), false);
+        super("", Preferences.MULTICAST_MESSAGE, Preferences.MULTICAST_MESSAGE, 
+        		m.getData(), m.getClockService(), false, m.getSource());
         msgReceived = m.getMsgReceivedArray();
         msgType = type;
-        source = m.getSource();
     }
 
     boolean canBeDelivered() {
@@ -50,10 +48,6 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
             }
         }
         return true;
-    }
-
-    public String getSource() {
-        return source;
     }
 
     public MessageType getMessageType() {
@@ -75,24 +69,5 @@ public class MulticastMessage extends TimeStampedMessage implements Serializable
     void setData(Object data) {
         this.data = data.toString();
     }
-
-    public void setSource(String src) {
-        source = src;
-    }
-
-    void printMsgReceivedArray() {
-        System.out.print("[");
-        for (boolean b : msgReceived) {
-            System.out.print(b + ",");
-        }
-        System.out.println("]");
-    }
-    
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-    }
 }
+

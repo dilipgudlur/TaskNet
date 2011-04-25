@@ -18,8 +18,10 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
@@ -84,7 +86,7 @@ public class MessagePasser extends Thread {
         receiveData = new byte[Preferences.SIZE_OF_BUFFER];
         conf_file = configuration_filename;
         host_name = local_name;
-        clockType = ClockType.VECTOR;
+        clockType = ClockType.LOGICAL;
 
         process_state = Process_State.RELEASED;
         arrMutexAckReceived = new boolean[Preferences.nodes.size()];
@@ -155,10 +157,10 @@ public class MessagePasser extends Thread {
             start();
 
             if (!host_name.equalsIgnoreCase(Preferences.LOGGER_NAME)) {
-                bootstrapNodeProcess();
                 while (!bootstrapComplete) {
                     try {
-                        Thread.sleep(10);
+                        bootstrapNodeProcess();
+                        Thread.sleep(Preferences.WAIT_TIME_BEFORE_RETRYING_BOOTSTRAP);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(MessagePasser.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -174,7 +176,10 @@ public class MessagePasser extends Thread {
     private void bootstrapNodeProcess() {
         System.out.println("Sending bootstrapping message: " + Preferences.LOGGER_NAME);
         Node hostNodeDetails = new Node(host_name, host_ip, host_port);
-        Message bootstrapMsg = new Message(Preferences.LOGGER_NAME, "", "", hostNodeDetails);
+        synchronized (Preferences.nodes) {
+            Preferences.nodes.put(host_name, hostNodeDetails);
+        }
+        Message bootstrapMsg = new Message(Preferences.LOGGER_NAME, "", "", hostNodeDetails, host_name);
         bootstrapMsg.setLogSource(host_name);
         bootstrapMsg.setNormalMsgType(Message.NormalMsgType.BOOTSTRAP);
         sendMsgThroSocket(bootstrapMsg);
@@ -295,6 +300,11 @@ public class MessagePasser extends Thread {
                     } else {
                         udpsendPacket = new DatagramPacket(sendData, sendData.length, Preferences.nodes.get(message.getDest()).getAdrress(), Preferences.nodes.get(message.getDest()).getNodePort());
                     }
+                    //if source/dest is logger dont simulate energy consumption
+                    if (!message.getDest().equals(Preferences.LOGGER_NAME)
+                            && !message.getSource().equals(Preferences.LOGGER_NAME)) {
+                        Preferences.nodes.get(host_name).decrBatteryLevel(Preferences.LOAD_SPENT_IN_COMMUNICATION_SEND);
+                    }
                     udpClientSocket.send(udpsendPacket);
                 } else {
                     Object[] node_names = Preferences.node_addresses.keySet().toArray();
@@ -309,6 +319,11 @@ public class MessagePasser extends Thread {
                             } else {
                                 udpsendPacket = new DatagramPacket(sendData, sendData.length, Preferences.nodes.get(node_names[i]).getAdrress(), Preferences.nodes.get(node_names[i]).getNodePort());
                             }
+                            //if source/dest is logger dont simulate energy consumption
+                            if (!message.getDest().equals(Preferences.LOGGER_NAME)
+                                    && !message.getSource().equals(Preferences.LOGGER_NAME)) {
+                                Preferences.nodes.get(host_name).decrBatteryLevel(Preferences.LOAD_SPENT_IN_COMMUNICATION_SEND);
+                            }
                             udpClientSocket.send(udpsendPacket);
                         }
                     }
@@ -318,6 +333,13 @@ public class MessagePasser extends Thread {
                     udpsendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(prop.getProperty("node." + message.getDest() + ".ip")), Integer.parseInt(prop.getProperty("node." + message.getDest() + ".port")));
                 } else {
                     udpsendPacket = new DatagramPacket(sendData, sendData.length, Preferences.nodes.get(message.getDest()).getAdrress(), Preferences.nodes.get(message.getDest()).getNodePort());
+                }
+                //remove this if letter
+                //if source/dest is logger dont simulate energy consumption
+                if (!message.getDest().equals(Preferences.LOGGER_NAME)
+                        && !message.getSource().equals(Preferences.LOGGER_NAME)
+                        && Preferences.nodes.get(host_name) != null) {
+                    Preferences.nodes.get(host_name).decrBatteryLevel(Preferences.LOAD_SPENT_IN_COMMUNICATION_SEND);
                 }
                 udpClientSocket.send(udpsendPacket);
             }
@@ -367,7 +389,7 @@ public class MessagePasser extends Thread {
             if (Preferences.logDrop) {
                 synchronized (outQueue) {
                     msg.setLogMessage("Message from " + host_name + " to " + msg.getDest() + " dropped");
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
             return;
@@ -378,7 +400,7 @@ public class MessagePasser extends Thread {
                 if (Preferences.logDelay) {
                     synchronized (outQueue) {
                         msg.setLogMessage("Message from " + host_name + " to " + msg.getDest() + " delayed");
-                        outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                        outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                     }
                 }
             }
@@ -391,7 +413,7 @@ public class MessagePasser extends Thread {
                 }
                 if (Preferences.logDuplicate) {
                     msg.setLogMessage("Message from " + host_name + " to " + msg.getDest() + " duplicated");
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
         } else {
@@ -400,7 +422,7 @@ public class MessagePasser extends Thread {
                 if (Preferences.logEvent && !msg.getDest().equalsIgnoreCase(Preferences.LOGGER_NAME)) {
                     msg.setToBeLogged(true);
                     msg.setLogMessage("Message sent from " + host_name + " to " + msg.getDest());
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
         }
@@ -418,18 +440,36 @@ public class MessagePasser extends Thread {
             try {
                 udpPacketReceived = new DatagramPacket(receiveData, receiveData.length, host_ip, host_port);
                 udpServerSocket.setReceiveBufferSize(5000);
-                udpServerSocket.setSendBufferSize(5000);
+                udpServerSocket.setSendBufferSize(5000);                
                 udpServerSocket.receive(udpPacketReceived);
                 ByteArrayInputStream bis = new ByteArrayInputStream(udpPacketReceived.getData());
                 ois = new ObjectInputStream(bis);
                 final Message msg = (Message) (ois.readObject());
-                if (msg instanceof MulticastMessage) {
-                    deliverMessage((MulticastMessage) msg);
-                } else {
-                    processReceivedMessage(msg);
+
+                //if source/dest is logger dont simulate energy consumption
+                if (!msg.getDest().equals(Preferences.LOGGER_NAME)
+                        && !msg.getSource().equals(Preferences.LOGGER_NAME)
+                        && Preferences.nodes.get(host_name) != null) {
+                    Preferences.nodes.get(host_name).decrBatteryLevel(Preferences.LOAD_SPENT_IN_COMMUNICATION_RECEIVE);
                 }
-            } catch (InvalidMessageException ex) {
-                System.out.println("Receiver: " + ex.getError());
+
+                if (msg instanceof MulticastMessage) {
+                    (new Thread() {
+                        public void run() {
+                            deliverMessage((MulticastMessage) msg);
+                        }
+                    }).start();
+                } else {
+                    (new Thread() {
+                        public void run() {
+                            try {
+                                processReceivedMessage(msg);
+                            } catch (InvalidMessageException ex) {
+                                Logger.getLogger(MessagePasser.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }).start();
+                }
             } catch (ClassNotFoundException ex) {
                 ex.printStackTrace();
             } catch (IOException ex) {
@@ -457,22 +497,34 @@ public class MessagePasser extends Thread {
             updateTime(msg, "receive");
             switch (msg.getNormalMsgType()) {
                 case BOOTSTRAP_NODE_LIST:
-                    Preferences.nodes = (HashMap) msg.getData();
-                    for (Node n : Preferences.nodes.values()) {
-                        try {
-							Preferences.node_addresses.put(n.getName(), n.getAdrress());
-						} catch (UnknownHostException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-                        Preferences.node_names.put(n.getIndex(), n.getName());
-                        causalVector.setSize(Math.max(causalVector.size(), n.getIndex() + 1));
-                        causalVector.set(n.getIndex(), 0);
+                    for (Node n : ((HashMap<String, Node>) msg.getData()).values()) {
+                        if (!Preferences.node_addresses.containsKey(n.getName())) {
+                            try {
+                                Preferences.nodes.put(n.getName(), n);
+                                Preferences.node_addresses.put(n.getName(), n.getAdrress());
+                            } catch (UnknownHostException e) {
+                                e.printStackTrace();
+                            }
+                            Preferences.node_names.put(n.getIndex(), n.getName());
+                            causalVector.setSize(Math.max(causalVector.size(), n.getIndex() + 1));
+                            causalVector.set(n.getIndex(), 0);
+                        }
                     }
                     Preferences.host_index = Preferences.nodes.get(host_name).getIndex();
                     clock = ClockFactory.initializeClock(clockType, Preferences.nodes.size());
                     announcePresence();
                     bootstrapComplete = true;
+                    return;
+                case ALIVE:
+                    Node newNode = (Node) msg.getData();
+                    Preferences.nodes.put(newNode.getName(), newNode);
+                    return;
+                case REMOVE_NODE:
+                    synchronized(Preferences.nodes){
+                        Preferences.node_names.remove(Preferences.nodes.get((String)msg.getData()).getIndex());
+                        Preferences.nodes.remove((String)msg.getData());
+                        Preferences.node_addresses.remove((String)msg.getData());
+                    }
                     return;
             }
         }
@@ -498,7 +550,7 @@ public class MessagePasser extends Thread {
             if (Preferences.logDrop || msg.isToBeLogged()) {
                 synchronized (outQueue) {
                     msg.setLogMessage("Received message dropped in " + host_name);
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
             return;
@@ -509,7 +561,7 @@ public class MessagePasser extends Thread {
                 if (Preferences.logDelay || msg.isToBeLogged()) {
                     synchronized (outQueue) {
                         msg.setLogMessage("Received message delayed in " + host_name);
-                        outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                        outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                     }
                 }
             }
@@ -522,7 +574,7 @@ public class MessagePasser extends Thread {
                 }
                 if (Preferences.logDuplicate || msg.isToBeLogged()) {
                     msg.setLogMessage("Received message duplicated in " + host_name);
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
         } else {
@@ -531,7 +583,7 @@ public class MessagePasser extends Thread {
                 inQueue.add(msg);
                 if (Preferences.logEvent || msg.isToBeLogged()) {
                     msg.setLogMessage("Message received in " + host_name);
-                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg));
+                    outQueue.add(new Message(Preferences.LOGGER_NAME, "log", "log", msg, host_name));
                 }
             }
         }
@@ -656,12 +708,11 @@ public class MessagePasser extends Thread {
                 System.out.println("Getting presence message");
                 Node newNode = (Node) msg.getData();
                 Preferences.nodes.put(newNode.getName(), newNode);
-			try {
-				Preferences.node_addresses.put(newNode.getName(), newNode.getAdrress());
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+                try {
+                    Preferences.node_addresses.put(newNode.getName(), newNode.getAdrress());
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
                 Preferences.node_names.put(newNode.getIndex(), newNode.getName());
                 causalVector.setSize(Math.max(causalVector.size(), newNode.getIndex() + 1));
                 causalVector.set(newNode.getIndex(), 0);
@@ -964,9 +1015,16 @@ public class MessagePasser extends Thread {
     }
 
     private void announcePresence() {
-        MulticastMessage presenceMsg = new MulticastMessage("", Preferences.MULTICAST_MESSAGE, Preferences.MULTICAST_MESSAGE,
-                Preferences.nodes.get(host_name), null, false, MulticastMessage.MessageType.ALIVE, host_name);
-        sendMsgThroSocket(presenceMsg);
+        Collection<Node> nodes = Preferences.nodes.values();
+        Message presenceMsg = new Message("", "", "", Preferences.nodes.get(host_name), host_name);
+        presenceMsg.setSource(host_name);
+        presenceMsg.setNormalMsgType(Message.NormalMsgType.ALIVE);
+        for (Node n : nodes) {
+            if (!n.getName().equalsIgnoreCase(host_name)) {
+                presenceMsg.setDest(n.getName());
+                sendMsgThroSocket(presenceMsg);
+            }
+        }
         System.out.println("Announcing presence");
     }
 

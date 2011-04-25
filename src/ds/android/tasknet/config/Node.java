@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ds.android.tasknet.task.Task;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  *
@@ -27,6 +29,7 @@ public class Node implements Serializable {
     Integer batteryLevel;
     Map<String, Task> acceptedTasks = new HashMap<String, Task>();
     int promisedLoad;
+    Date lastUpdated;
 
     public Node(String name, InetAddress address, Integer port) {
         nodeName = name;
@@ -35,8 +38,9 @@ public class Node implements Serializable {
         nodePort = port;
         memoryCapacity = 0;
         processorLoad = 0;
-        batteryLevel = 0;
+        batteryLevel = Preferences.TOTAL_LOAD_AT_NODE;
         promisedLoad = 0;
+        lastUpdated = null;
     }
 
     public Integer getIndex() {
@@ -47,6 +51,14 @@ public class Node implements Serializable {
         return nodeName;
     }
 
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
     public InetAddress getAdrress() throws UnknownHostException {
         return InetAddress.getByName(nodeAddress);
     }
@@ -54,7 +66,7 @@ public class Node implements Serializable {
     public void setNodeIndex(Integer nodeIndex) {
         this.nodeIndex = nodeIndex;
     }
-    
+
     public Integer getNodePort() {
         return nodePort;
     }
@@ -76,58 +88,56 @@ public class Node implements Serializable {
     }
 
     public void setBatteryLevel(int value) {
-//        batteryLevel -= value;
+        batteryLevel = value;
     }
 
-//    public Boolean hasBeenDistributed() {
-//        return distributed;
-//    }
-//
-//    public void setDistributed(Boolean flag) {
-//        distributed = flag;
-//    }
+    public void decrBatteryLevel(int value) {
+        batteryLevel -= value;
+    }
 
     public void update(long currentRAM, float CPUsage, int currentBatteryLevel) {
         memoryCapacity = currentRAM;
         processorLoad = CPUsage;
         batteryLevel = currentBatteryLevel;
+        lastUpdated = Calendar.getInstance().getTime();
     }
 
     public void addToAcceptedTask(String taskAdvReplyId, Task task) {
-    	if(this.acceptedTasks.get(taskAdvReplyId) == null) {
-    		this.acceptedTasks.put(taskAdvReplyId, task);
-    	}
+        if (this.acceptedTasks.get(taskAdvReplyId) == null) {
+            this.acceptedTasks.put(taskAdvReplyId, task);
+        }
     }
-    
+
     public void removeFromAcceptedTask(String taskId) {
-    	this.acceptedTasks.remove(taskId);
+        this.acceptedTasks.remove(taskId);
     }
-    
+
     public Task getAcceptedTaskByTaskId(String taskId) {
-    	return this.acceptedTasks.get(taskId);
+        return this.acceptedTasks.get(taskId);
     }
-    
+
     public int getPromisedLoad() {
-		return promisedLoad;
-	}
+        return promisedLoad;
+    }
 
-	public void setPromisedLoad(int promisedLoad) {
-		this.promisedLoad = promisedLoad;
-	}
-	
-	public void incrPromisedLoad(int promisedLoad) {
-		this.promisedLoad += promisedLoad;
-	}
+    public void setPromisedLoad(int promisedLoad) {
+        this.promisedLoad = promisedLoad;
+    }
 
-	public void decrPromisedLoad(int promisedLoad) {
-		this.promisedLoad -= promisedLoad;
-	}
-	@Override
+    public void incrPromisedLoad(int promisedLoad) {
+        this.promisedLoad += promisedLoad;
+    }
+
+    public void decrPromisedLoad(int promisedLoad) {
+        this.promisedLoad -= promisedLoad;
+    }
+
     public String toString() {
         String str = "";
         str += "Name: " + nodeName;
         str += "\nIndex: " + nodeIndex;
         str += "\nAdrress: " + nodeAddress;
+        str += "\nPort: " + nodePort;
         str += "\nMemory Capacity: " + memoryCapacity;
         str += "\nProcessor Load: " + processorLoad;
         str += "\nBattery Level: " + batteryLevel;

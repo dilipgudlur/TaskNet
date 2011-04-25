@@ -10,9 +10,11 @@ import ds.android.tasknet.distributor.*;
 import ds.android.tasknet.logger.*;
 import ds.android.tasknet.task.TaskLookup;
 import android.app.Activity;
+import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -25,13 +27,31 @@ public class DistributeTaskActivity extends Activity {
 	TaskDistributor distributor;
 	EditText taskLoad,methodName;
 	int taskload;
+	PowerManager.WakeLock wl;
+	
+	/*public void onPause()
+	{
+		super.onPause();
+		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Tag");
+		wl.acquire();
+	}
+	
+	public void onResume()
+	{
+		super.onResume();
+		wl.release();		
+	}*/
 	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.distribute_task);
-
+		
+		//PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+	    //wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "TAG");
+	    
 		Button distributeGlobalButton = (Button) findViewById(R.id.distributeGlobalButton);
 		Button distributeLocalButton = (Button) findViewById(R.id.distributeLocalButton);
 		taskLoad = (EditText) findViewById(R.id.taskLoad);

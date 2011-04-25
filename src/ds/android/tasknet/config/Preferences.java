@@ -40,11 +40,16 @@ public class Preferences {
 	public static final String ENTER_CRITICAL_SECTION = "Enter Critical Section";
 	public static final String LEAVE_CRITICAL_SECTION = "Leave Critical Section";
 	public static final int SIZE_OF_BUFFER = 10000;
-	public static final int PROFILE_UPDATE_TIME_PERIOD = 2000;
-	public static final int TOTAL_LOAD_AT_NODE = 100;
+	public static final int PROFILE_UPDATE_TIME_PERIOD = 500;
+	public static final int TOTAL_LOAD_AT_NODE = 1000;
+	public static final int LOAD_SPENT_IN_COMMUNICATION_SEND = 2;
+	public static final int LOAD_SPENT_IN_COMMUNICATION_RECEIVE = 1;
+	public static final int LOAD_SPENT_IN_TASK_CHUNK_EXECUTION = 10;
+	public static final int LOAD_SPENT_IN_TASK_DISTRIBUTION = 20;
 	public static final int MINIMUM_LOAD_REQUEST = 0;
 	public static final int NUMBER_OF_RETRIES_BEFORE_QUITTING = 3;
 	public static final int WAIT_TIME_BEFORE_RETRYING = 1000;
+        public static final int WAIT_TIME_BEFORE_RETRYING_BOOTSTRAP = 2000;
 	public static HashMap<String, InetAddress> node_addresses;
 	public static HashMap<String, Node> nodes;
 	public static HashMap<Integer, String> node_names;
@@ -66,31 +71,6 @@ public class Preferences {
 			LOGGER_NAME = prop.getProperty("LOGGER");
 			COORDINATOR = prop.getProperty("COORDINATOR");
                         host_initial_load = host_reserved_load = 10;
-//			StringTokenizer node_string = new StringTokenizer(
-//					prop.getProperty("NAMES"), ",");
-//			int num_nodes = node_string.countTokens();
-//			for (int i = 0; i < num_nodes; i++) {
-//				String node_name = node_string.nextToken();
-//				if (node_name.equalsIgnoreCase(local_host)) {
-//					host_index = i;
-//					host_initial_load = host_reserved_load = new Integer(
-//							prop.getProperty("node." + local_host
-//									+ ".reserved_load"));
-//				}
-//				if (!node_name.equalsIgnoreCase(LOGGER_NAME)) {
-//					Node node = new Node(node_name,
-//							InetAddress.getByName(prop.getProperty("node."
-//									+ node_name + ".ip")), new Integer(prop.getProperty("node."
-//									+ node_name + ".port")));
-//					// nodesList.add(node);
-//					nodes.put(node_name, node);
-//					node_names.put(i, node_name);
-//					node_addresses.put(
-//							node_name,
-//							InetAddress.getByName(prop.getProperty("node."
-//									+ node_name + ".ip")));
-//				}
-//			}
 		} catch (FileNotFoundException ex) {
 			Logger.getLogger(Preferences.class.getName()).log(Level.SEVERE,
 					null, ex);
