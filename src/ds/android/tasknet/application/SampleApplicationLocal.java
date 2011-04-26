@@ -10,13 +10,13 @@ import java.util.Random;
 import java.util.Vector;
 
 import ds.android.tasknet.mfcc.MFCC;
-
+import ds.android.tasknet.config.Preferences;
 /* * @author Divya_PKV
  */
 public class SampleApplicationLocal {
 
     public ArrayList<Double> method1(int a, int b) {
-        
+ 
         int nnumberofFilters = 24;	
         int nlifteringCoefficient = b;	//earlier value was 22, now set to a-20
         boolean oisLifteringEnabled = true;
@@ -50,13 +50,12 @@ public class SampleApplicationLocal {
         {
         	mfcc_parameters.add(dparameters[i]);
         }
-        	     	 
-        return mfcc_parameters;
+        if(Preferences.DEBUG_MODE)
+			System.out.println("DEBUG SET MFCC result: "+mfcc_parameters);	     	 
+        
+		return mfcc_parameters;
     }
 
-    public void executeLocalApp()
-    {}
-    
     public void method2() {
         System.out.println("Method2");
     }
