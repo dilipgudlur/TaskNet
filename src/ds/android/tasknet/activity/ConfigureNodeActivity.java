@@ -17,31 +17,12 @@ public class ConfigureNodeActivity extends Activity{
 	EditText nodeName;
 	Button btnConfig;
 	String strNodeName;
-	PowerManager.WakeLock wl;
-	
-	
-	/*public void onPause()
-	{
-		super.onStart();
-		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-		wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Tag");
-		wl.acquire();
-	}
-	
-	public void onResume()
-	{
-		super.onResume();
-		wl.release();		
-	}*/
-	
+		
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.configure_node);
         
-        //PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-		//wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Tag");
-		//wl.acquire();
         nodeName = (EditText)findViewById(R.id.txtNodeName);
         btnConfig = (Button)findViewById(R.id.btnConfigure);
         
@@ -59,8 +40,7 @@ public class ConfigureNodeActivity extends Activity{
 			
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				//wl.release();
+				
 				strNodeName = nodeName.getText().toString();
 				Intent i = new Intent(ConfigureNodeActivity.this, DistributeTaskActivity.class);
 				i.putExtra("NodeName", strNodeName);
